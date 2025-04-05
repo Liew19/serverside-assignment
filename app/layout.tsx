@@ -2,6 +2,7 @@ import type React from "react";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import { ChefHat, Search, Bell, User } from "lucide-react";
+import { HamburgerMenu } from "@/components/ui/hamburger-menu";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,33 @@ export default function RootLayout({
                       <Link href="/register">Register</Link>
                     </Button>
                   </div>
+
+                  <HamburgerMenu>
+                    <Link
+                      href="/recipes"
+                      className="text-sm font-medium hover:text-primary transition-colors"
+                    >
+                      Recipes
+                    </Link>
+                    <Link
+                      href="/meal-planning"
+                      className="text-sm font-medium hover:text-primary transition-colors"
+                    >
+                      Meal Planning
+                    </Link>
+                    <Link
+                      href="/community"
+                      className="text-sm font-medium hover:text-primary transition-colors"
+                    >
+                      Community
+                    </Link>
+                    <Link
+                      href="/competitions"
+                      className="text-sm font-medium hover:text-primary transition-colors"
+                    >
+                      Competitions
+                    </Link>
+                  </HamburgerMenu>
                 </div>
               </div>
             </header>
