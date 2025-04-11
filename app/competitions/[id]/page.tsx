@@ -1,60 +1,56 @@
-'use client';
-import Link from "next/link";
-import React, { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  Heart,
-  MessageSquare,
-  Share2,
-  ThumbsUp,
-  Trophy,
-  Users,
-} from "lucide-react";
-import { useRouter } from 'next/navigation';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+"use client"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
+import { ArrowLeft, Calendar, Share2, ThumbsUp, Trophy, Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import RecipeSubmissionForm from "@/components/recipe-submission-form"
 
 // In Next.js App Router, page props contain the route parameters
 export default function CompetitionDetailPage({
-  params
+  params,
 }: {
-  params: { id: string }
+  params: { id: string}
 }) {
-  const competitionId = params.id;
-  
+  const competitionId = params.id
+  const searchParams = useSearchParams();
+  const user_id = searchParams.get("user_id");
+
   interface Competition {
-    competition_id: string;
-    title: string;
-    description: string;
-    status: "active" | "upcoming" | "past";
-    start_date: string;
-    end_date: string;
-    voting_end_date: string;
-    entry_num: number;
-    prize: number;
+    competition_id: string
+    title: string
+    description: string
+    status: "active" | "upcoming" | "past"
+    start_date: string
+    end_date: string
+    voting_end_date: string
+    entry_num: number
+    prize: number
   }
-  
+
   interface Entry {
-    entry_id: string;
-    title: string;
-    description: string;
-    username: string;
-    submission_date: string;
-    number_of_votes: number;
+    entry_id: string
+    title: string
+    description: string
+    username: string
+    submission_date: string
+    number_of_votes: number
   }
-  type Entries = Entry[];
-  
-  interface votedEntry{
+  type Entries = Entry[]
+
+  interface votedEntry {
     entry_id: string
   }
-  type votedEntries = votedEntry[];
+  type votedEntries = votedEntry[]
+
+  interface userRecipe{
+    recipe_id: number
+    title: string
+  }
 
   const [competition, setCompetition] = useState<Competition>({
     competition_id: "",
@@ -65,122 +61,187 @@ export default function CompetitionDetailPage({
     end_date: "",
     prize: 0,
     entry_num: 0,
-    voting_end_date: ""
-  });
-  
-  const [entries, setEntries] = useState<Entries>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userVotedEntries, setUserVotedEntries] = useState<votedEntries>([]);
-  
+    voting_end_date: "",
+  })
+
+  const [entries, setEntries] = useState<Entries>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [userVotedEntries, setUserVotedEntries] = useState<votedEntries>([])
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false)
+  const [userRecipes, setUserRecipes] = useState<userRecipe[]>([]);
+  const [submissionCount, setSubmissionCount] = useState(0);
 
   useEffect(() => {
-    if (!competitionId) return;
-    
+    if (!user_id || !competitionId) return;
     const fetchCompetitionData = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
         // Fetch competition details
-        const competitionUrl = `http://localhost/Recipe/api/api.php?action=get_competition_by_id&competition_id=${competitionId}`;
+        const competitionUrl = `http://localhost/Recipe/api/api.php?action=get_competition_by_id&competition_id=${competitionId}`
         const competitionResponse = await fetch(competitionUrl, {
-          method: 'GET',  
+          method: "GET",
           headers: {
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
-            'Content-Type': 'application/x-www-form-urlencoded', 
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-        });
-        const competitionData = await competitionResponse.json();
-        setCompetition(competitionData.data);
-        
+        })
+        const competitionData = await competitionResponse.json()
+        setCompetition(competitionData.data)
+
         // Fetch competition entries
-        const entriesUrl = `http://localhost/Recipe/api/api.php?action=get_competition_recipes&competition_id=${competitionId}`;
-        const entriesResponse = await fetch(entriesUrl, {
-          method: 'GET', 
+        fetchEntries();
+
+        // Fetch user voted entries
+        const checkVoteUrl = `http://localhost/Recipe/api/api.php?action=get_user_voted_entries&user_id=${user_id}&competition_id=${competitionId}`
+        const checkVoteResponse = await fetch(checkVoteUrl, {
+          method: "GET",
           headers: {
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
-            'Content-Type': 'application/x-www-form-urlencoded',  
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-        });
-        const entriesData = await entriesResponse.json();
+        })
+        const voteData = await checkVoteResponse.json()
+        if (voteData.data) {
+          const formattedVotes = voteData.data.map((vote: any) => ({
+            entry_id: vote.entry_id,
+          }))
+          setUserVotedEntries(formattedVotes)
+        }
+
+        //fetch user recipe
         
+        const userRecipeUrl = `http://localhost/Recipe/api/api.php?action=get_user_recipe&user_id=${user_id}`
+        const checkUserRecipeResponse = await fetch(userRecipeUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        })
+        const recipeData = await checkUserRecipeResponse.json();
+        if(recipeData.data){
+          const formattedRecipe = recipeData.data.map((recipe: any) => ({
+            title: recipe.title,
+            recipe_id: recipe.recipe_id
+          }))
+          setUserRecipes(formattedRecipe);
+        }
+      } catch (error) {
+        console.error("Error fetching competition data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchCompetitionData()
+  }, [competitionId, user_id])
+
+  useEffect(()=>{
+    fetchEntries();
+  }, [submissionCount])
+
+  async function fetchEntries(){
+    const entriesUrl = `http://localhost/Recipe/api/api.php?action=get_competition_recipes&competition_id=${competitionId}`
+        const entriesResponse = await fetch(entriesUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        })
+        const entriesData = await entriesResponse.json()
+
         if (entriesData.data) {
           const formattedEntries = entriesData.data.map((entry: any) => ({
             entry_id: entry.entry_id,
-            title: entry.recipe_title,          
-            description: entry.recipe_description,   
+            title: entry.recipe_title,
+            description: entry.recipe_description,
             username: entry.username,
             submission_date: entry.submission_date,
-            number_of_votes: parseInt(entry.number_of_votes || '0')  
-          }));
-          setEntries(formattedEntries);
-          console.log("Entries" ,formattedEntries);
+            number_of_votes: Number.parseInt(entry.number_of_votes || "0"),
+          }))
+          setEntries(formattedEntries)
+          console.log("Entries", formattedEntries)
         }
-        // Fetch user voted entries
-        const checkVoteUrl = `http://localhost/Recipe/api/api.php?action=get_user_voted_entries&user_id=2&competition_id=${competitionId}`;
-        const checkVoteResponse = await fetch(checkVoteUrl, {
-          method: 'GET', 
+  }
+
+  // useEffect(() =>{
+  //   console.log("Recipe is ", userRecipes);
+  // }, [userRecipes]);
+
+  const [votedEntries, setVotedEntries] = useState<string[]>([])
+
+  const handleVoteClick = async (entryId: string) => {
+    try {
+      const response = await fetch("http://localhost/Recipe/api/api.php", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          action: "vote_recipe",
+          user_id: "2",
+          entry_id: entryId,
+        }).toString(),
+      })
+
+      if (response.ok) {
+        // Update userVotedEntries so UI will immediately show the voted state
+        setUserVotedEntries((prev) => [...prev, { entry_id: entryId }])
+
+        // Update vote count in the entries array
+        setEntries(
+          entries.map((entry) =>
+            entry.entry_id === entryId ? { ...entry, number_of_votes: entry.number_of_votes + 1 } : entry,
+          ),
+        )
+      }
+    } catch (error) {
+      console.error("Error voting:", error)
+    }
+  }
+
+  const handleEntrySubmitted = () => {
+    // Refresh the entries list after a successful submission
+    if (!competitionId) return
+
+    const fetchEntries = async () => {
+      try {
+        const entriesUrl = `http://localhost/Recipe/api/api.php?action=get_competition_recipes&competition_id=${competitionId}`
+        const entriesResponse = await fetch(entriesUrl, {
+          method: "GET",
           headers: {
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
-            'Content-Type': 'application/x-www-form-urlencoded',  
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-        });
-        const voteData = await checkVoteResponse.json();
-        if (voteData.data) {
-          const formattedVotes = voteData.data.map((vote: any) => ({
-            entry_id: vote.entry_id,    
-          }));
-          setUserVotedEntries(formattedVotes);
+        })
+        const entriesData = await entriesResponse.json()
+
+        if (entriesData.data) {
+          const formattedEntries = entriesData.data.map((entry: any) => ({
+            entry_id: entry.entry_id,
+            title: entry.recipe_title,
+            description: entry.recipe_description,
+            username: entry.username,
+            submission_date: entry.submission_date,
+            number_of_votes: Number.parseInt(entry.number_of_votes || "0"),
+          }))
+          setEntries(formattedEntries)
         }
       } catch (error) {
-        console.error("Error fetching competition data:", error);
-      } finally {
-        setIsLoading(false);
+        console.error("Error refreshing entries:", error)
       }
-    };
-
-    fetchCompetitionData();
-  }, [competitionId]);
-
-  // Add this to your state variables
-const [votedEntries, setVotedEntries] = useState<string[]>([]);
-
-// Replace your existing handleVoteClick function with this:
-const handleVoteClick = async (entryId: string) => {
-  try {
-    const response = await fetch("http://localhost/Recipe/api/api.php", {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
-        'Content-Type': 'application/x-www-form-urlencoded',  
-      },
-      body: new URLSearchParams({
-        action: 'vote_recipe',      
-        user_id: '2',            
-        entry_id: entryId
-      }).toString(), 
-    });
-    
-    if(response.ok) {
-      // Update userVotedEntries so UI will immediately show the voted state
-      setUserVotedEntries(prev => [...prev, { entry_id: entryId }]);
-      
-      // Update vote count in the entries array
-      setEntries(entries.map(entry => 
-        entry.entry_id === entryId 
-          ? {...entry, number_of_votes: entry.number_of_votes + 1} 
-          : entry
-      ));
     }
-  } catch (error) {
-    console.error("Error voting:", error);
+
+    fetchEntries()
   }
-};
 
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4 flex justify-center">
         <div>Loading competition details...</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -201,12 +262,10 @@ const handleVoteClick = async (entryId: string) => {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-2xl">
-                    {competition.title}
-                  </CardTitle>
+                  <CardTitle className="text-2xl">{competition.title}</CardTitle>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="outline" className="bg-green-100">
-                      {competition.status || 'Active'}
+                      {competition.status || "Active"}
                     </Badge>
                     <div className="text-sm text-muted-foreground flex items-center">
                       <Calendar className="mr-1 h-4 w-4" />
@@ -214,15 +273,11 @@ const handleVoteClick = async (entryId: string) => {
                     </div>
                   </div>
                 </div>
-                <div className="text-xl font-bold text-primary">
-                Prize RM{competition.prize} 
-                </div>
+                <div className="text-xl font-bold text-primary">Prize RM{competition.prize}</div>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="mb-4 whitespace-pre-line">
-                {competition.description}
-              </p>
+              <p className="mb-4 whitespace-pre-line">{competition.description}</p>
 
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
@@ -231,12 +286,8 @@ const handleVoteClick = async (entryId: string) => {
                 </div>
               </div>
 
-              <div className="flex justify-between">
-                <Button variant="outline">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share
-                </Button>
-                <Button>Submit Your Entry</Button>
+              <div className="flex justify-end">
+                <Button onClick={() => setShowSubmissionForm(true)}>Submit Your Entry</Button>
               </div>
             </CardContent>
           </Card>
@@ -269,10 +320,14 @@ const handleVoteClick = async (entryId: string) => {
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
-                              <Button variant='ghost' size='sm' onClick={() => handleVoteClick(entry.entry_id)}>
-                              <ThumbsUp className={`mr-1 h-4 w-4 ${userVotedEntries.some(vote => vote.entry_id === entry.entry_id) 
-                                ? "fill-current text-primary" 
-                                : ""}`} />
+                              <Button variant="ghost" size="sm" onClick={() => handleVoteClick(entry.entry_id)}>
+                                <ThumbsUp
+                                  className={`mr-1 h-4 w-4 ${
+                                    userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                                      ? "fill-current text-primary"
+                                      : ""
+                                  }`}
+                                />
                                 {entry.number_of_votes}
                               </Button>
                             </div>
@@ -286,9 +341,7 @@ const handleVoteClick = async (entryId: string) => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No entries have been submitted yet.
-                    </div>
+                    <div className="text-center py-8 text-muted-foreground">No entries have been submitted yet.</div>
                   )}
                 </CardContent>
               </Card>
@@ -304,9 +357,7 @@ const handleVoteClick = async (entryId: string) => {
             <CardContent className="space-y-4 pt-2">
               <div>
                 <div className="text-sm font-medium">Prize</div>
-                <div className="text-xl font-bold text-primary mt-1">
-                  RM{competition.prize}
-                </div>
+                <div className="text-xl font-bold text-primary mt-1">RM{competition.prize}</div>
               </div>
 
               <div>
@@ -345,26 +396,30 @@ const handleVoteClick = async (entryId: string) => {
                             {index + 1}
                           </div>
                           <div className="flex-1 truncate">{entry.title}</div>
-                          <Button 
-                          variant='ghost' 
-                          size='sm' 
-                          onClick={() => handleVoteClick(entry.entry_id)}
-                          disabled={userVotedEntries.some(vote => vote.entry_id === entry.entry_id)}
-                          className={userVotedEntries.some(vote => vote.entry_id === entry.entry_id) 
-                            ? "opacity-50 bg-gray-100" 
-                            : ""}
-                        >
-                          <ThumbsUp className={`mr-1 h-4 w-4 ${userVotedEntries.some(vote => vote.entry_id === entry.entry_id) 
-                            ? "fill-current text-primary" 
-                            : ""}`} />
-                          {entry.number_of_votes}
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleVoteClick(entry.entry_id)}
+                            disabled={userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)}
+                            className={
+                              userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                                ? "opacity-50 bg-gray-100"
+                                : ""
+                            }
+                          >
+                            <ThumbsUp
+                              className={`mr-1 h-4 w-4 ${
+                                userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                                  ? "fill-current text-primary"
+                                  : ""
+                              }`}
+                            />
+                            {entry.number_of_votes}
+                          </Button>
                         </div>
                       ))
                   ) : (
-                    <div className="text-center py-4 text-sm text-muted-foreground">
-                      No entries yet
-                    </div>
+                    <div className="text-center py-4 text-sm text-muted-foreground">No entries yet</div>
                   )}
                 </div>
               </div>
@@ -374,6 +429,23 @@ const handleVoteClick = async (entryId: string) => {
           </Card>
         </div>
       </div>
+
+      <RecipeSubmissionForm
+        open={showSubmissionForm}
+        onOpenChange={setShowSubmissionForm}
+        competitionId={competitionId}
+        onSubmitSuccess={() => {
+          // Increment submissionCount when a recipe is successfully submitted
+          setSubmissionCount(prev => prev + 1)
+          // Also, you can call your existing function to refetch the entries if needed.
+          handleEntrySubmitted() 
+        }}
+        recipes={userRecipes.map(recipe => ({
+          recipe_id: recipe.recipe_id.toString(), // Use the actual recipe_id from your data
+          title: recipe.title
+        }))}
+        userId={user_id || "2"}
+      />
     </div>
-  );
+  )
 }

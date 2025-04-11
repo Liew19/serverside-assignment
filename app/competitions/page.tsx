@@ -42,6 +42,7 @@ interface Competition {
 
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
+  
 
   useEffect(() => {
     const url = `http://localhost/Recipe/api/api.php?action=get_all_competitions`;
@@ -78,20 +79,6 @@ export default function CompetitionsPage() {
         </div>
         <Button asChild>
           <Link href="/competitions/create">Create Competition</Link> 
-        </Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search competitions..."
-            className="w-full pl-8"
-          />
-        </div>
-        <Button variant="outline">
-          <Filter className="mr-2 h-4 w-4" /> Filter
         </Button>
       </div>
 
@@ -154,7 +141,8 @@ export default function CompetitionsPage() {
 
 function CompetitionCard({ competition }: { competition: Competition }) {
   const router = useRouter();
-
+  const user_id = 2;
+  
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <div className="aspect-video bg-primary/10 relative">
@@ -173,7 +161,7 @@ function CompetitionCard({ competition }: { competition: Competition }) {
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">
           <Link
-            href={`/competitions/${competition.competition_id}`}
+            href={`/competitions/${competition.competition_id}?user_id=${user_id}`}
             className="hover:text-primary transition-colors"
           >
               {competition.title}
