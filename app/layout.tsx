@@ -2,7 +2,6 @@ import type React from "react";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import { ChefHat, Search, Bell, User } from "lucide-react";
-import { HamburgerMenu } from "@/components/ui/hamburger-menu";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
@@ -124,162 +123,13 @@ export default function RootLayout({
                       <Link href="/register">Register</Link>
                     </Button>
                   </div>
-
-                  <HamburgerMenu>
-                    <Link
-                      href="/recipes"
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      Recipes
-                    </Link>
-                    <Link
-                      href="/meal-planning"
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      Meal Planning
-                    </Link>
-                    <Link
-                      href="/community"
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      Community
-                    </Link>
-                    <Link
-                      href="/competitions"
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
-                      Competitions
-                    </Link>
-                  </HamburgerMenu>
                 </div>
               </div>
             </header>
             <main className="flex-1">{children}</main>
-            <footer className="border-t py-12 bg-primary/5">
+            <footer className="py-8 bg-primary/5">
               <div className="container px-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                  <div>
-                    <Link
-                      href="/"
-                      className="flex items-center gap-2 font-semibold mb-4"
-                    >
-                      <ChefHat className="h-6 w-6 text-primary" />
-                      <span>CookMaster</span>
-                    </Link>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Your all-in-one platform for recipe management, meal
-                      planning, community engagement, and cooking competitions.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium mb-4">Features</h3>
-                    <ul className="space-y-2">
-                      <li>
-                        <Link
-                          href="/recipes"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Recipe Management
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/meal-planning"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Meal Planning
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/community"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Community
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/competitions"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Competitions
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium mb-4">Resources</h3>
-                    <ul className="space-y-2">
-                      <li>
-                        <Link
-                          href="/blog"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Blog
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/faq"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          FAQ
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/help"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Help Center
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium mb-4">Company</h3>
-                    <ul className="space-y-2">
-                      <li>
-                        <Link
-                          href="/about"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          About Us
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/contact"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Contact
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/terms"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Terms
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/privacy"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Privacy
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <div className="flex flex-col md:flex-row justify-between items-center">
                   <p className="text-sm text-muted-foreground mb-4 md:mb-0">
                     &copy; {new Date().getFullYear()} CookMaster. All rights
                     reserved.
