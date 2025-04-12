@@ -1,6 +1,17 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import type React from "react";
 import Link from "next/link";
-import { ChefHat, Calendar, Users, Trophy, ArrowRight } from "lucide-react";
+import {
+  ChefHat,
+  Calendar,
+  Users,
+  Trophy,
+  ArrowRight,
+  Heart,
+  Clock,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +21,86 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { RecipeCard } from "@/components/ui/recipe-card";
+
+interface Recipe {
+  difficulty: string;
+  cuisine: string;
+  recipe_id: number;
+  title: string;
+  description: string;
+  prep_time: number;
+  cook_time: number;
+  servings: number;
+  image_url?: string;
+  ingredients: string;
+  instructions: string;
+  created_at: string;
+  favourite: number;
+}
 
 export default function Home() {
+  const [featuredRecipes, setFeaturedRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost/assignmentbackend/api/recipes.php"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          // Convert favourite to number if it's not already
+          const processedData = data.map((recipe: Recipe) => ({
+            ...recipe,
+            favourite: Number(recipe.favourite),
+          }));
+          setFeaturedRecipes(processedData.slice(0, 3)); // Only show first 3 recipes
+        }
+      } catch (error) {
+        console.error("Error fetching recipes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
+
+  const handleFavourite = async (
+    recipeId: number,
+    currentFavourite: number
+  ) => {
+    try {
+      const newFavouriteValue = currentFavourite === 0 ? 1 : 0;
+
+      const response = await fetch(
+        `http://localhost/assignmentbackend/api/recipes.php?id=${recipeId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ favourite: newFavouriteValue }),
+        }
+      );
+
+      if (response.ok) {
+        setFeaturedRecipes((prev) =>
+          prev.map((recipe) =>
+            recipe.recipe_id === recipeId
+              ? { ...recipe, favourite: newFavouriteValue }
+              : recipe
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating favourite status:", error);
+    }
+  };
+
   return (
     <div>
       {/* Hero Section */}
@@ -102,11 +191,21 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredRecipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center">Loading...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredRecipes.map((recipe) => (
+                <RecipeCard
+                  key={recipe.recipe_id}
+                  recipe={recipe}
+                  onFavourite={() =>
+                    handleFavourite(recipe.recipe_id, recipe.favourite)
+                  }
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -161,94 +260,3 @@ function FeatureCard({
     </Card>
   );
 }
-
-interface Recipe {
-  id: string;
-  title: string;
-  description: string;
-  prepTime: number;
-  cuisine: string;
-  difficulty: string;
-  image: string;
-}
-
-function RecipeCard({ recipe }: { recipe: Recipe }) {
-  return (
-    <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow">
-      <div className="aspect-video bg-primary/10 relative">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <ChefHat className="h-12 w-12 text-primary/40" />
-        </div>
-        <div className="absolute top-3 right-3">
-          <div className="bg-background/80 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
-            {recipe.prepTime} mins
-          </div>
-        </div>
-      </div>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">
-            <Link
-              href={`/recipes/${recipe.id}`}
-              className="hover:text-primary transition-colors"
-            >
-              {recipe.title}
-            </Link>
-          </CardTitle>
-        </div>
-        <div className="flex gap-2 mt-1">
-          <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-            {recipe.cuisine}
-          </span>
-          <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-            {recipe.difficulty}
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-4">
-        <p className="text-muted-foreground text-sm line-clamp-2">
-          {recipe.description}
-        </p>
-      </CardContent>
-      <CardFooter className="pt-0">
-        <Button variant="ghost" size="sm" className="w-full" asChild>
-          <Link href={`/recipes/${recipe.id}`}>View Recipe</Link>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
-// Sample data
-const featuredRecipes: Recipe[] = [
-  {
-    id: "1",
-    title: "Spaghetti Carbonara",
-    description:
-      "A classic Italian pasta dish with eggs, cheese, pancetta, and black pepper.",
-    prepTime: 30,
-    cuisine: "Italian",
-    difficulty: "Medium",
-    image: "/placeholder.svg",
-  },
-  {
-    id: "2",
-    title: "Chicken Tikka Masala",
-    description:
-      "Grilled chunks of chicken enveloped in a creamy spiced tomato sauce.",
-    prepTime: 45,
-    cuisine: "Indian",
-    difficulty: "Medium",
-    image: "/placeholder.svg",
-  },
-  {
-    id: "3",
-    title: "Greek Salad",
-    description:
-      "Fresh vegetables, olives, and feta cheese dressed with olive oil and herbs.",
-    prepTime: 15,
-    cuisine: "Greek",
-    difficulty: "Easy",
-    image: "/placeholder.svg",
-  },
-];

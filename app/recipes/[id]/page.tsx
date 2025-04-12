@@ -1,204 +1,503 @@
-import Link from "next/link";
+"use client";
+
 import {
   ArrowLeft,
   Clock,
   Edit,
   Heart,
-  Share2,
-  Star,
+  Plus,
+  Trash2,
   Users,
-  Bookmark,
-  Printer,
-  MessageSquare,
 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function RecipeDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
-  // In a real app, you would fetch the recipe data based on the ID
-  const recipe = {
-    id: params.id,
-    title: "Spaghetti Carbonara",
-    description:
-      "A classic Italian pasta dish with eggs, cheese, pancetta, and black pepper.",
-    prepTime: 30,
-    cookTime: 15,
-    servings: 4,
-    cuisine: "Italian",
-    difficulty: "Medium",
-    author: {
-      name: "Chef Mario",
-      avatar: "/placeholder.svg",
-      recipes: 42,
-    },
-    rating: 4.8,
-    reviews: 124,
-    ingredients: [
-      "400g spaghetti",
-      "200g pancetta or guanciale, diced",
-      "4 large eggs",
-      "100g Pecorino Romano cheese, grated",
-      "50g Parmesan cheese, grated",
-      "Freshly ground black pepper",
-      "Salt to taste",
-    ],
-    instructions: [
-      "Bring a large pot of salted water to boil and cook the spaghetti according to package instructions until al dente.",
-      "While the pasta is cooking, heat a large skillet over medium heat. Add the diced pancetta and cook until crispy, about 5-7 minutes.",
-      "In a bowl, whisk together the eggs, grated Pecorino Romano, and Parmesan cheese. Season with plenty of freshly ground black pepper.",
-      "When the pasta is done, reserve 1/2 cup of the pasta water, then drain the pasta.",
-      "Working quickly, add the hot pasta to the skillet with the pancetta, tossing to combine.",
-      "Remove the skillet from the heat and pour in the egg and cheese mixture, tossing continuously until the eggs thicken but don't scramble.",
-      "If needed, add a splash of the reserved pasta water to create a creamy sauce.",
-      "Serve immediately with additional grated cheese and black pepper on top.",
-    ],
-    nutrition: {
-      calories: 650,
-      protein: 30,
-      carbs: 65,
-      fat: 28,
-    },
-    tips: [
-      "Use room temperature eggs to prevent them from seizing up when added to the hot pasta.",
-      "Traditional carbonara doesn't include cream - the creaminess comes from the eggs and cheese.",
-      "Reserve some pasta water to help create a silky sauce if needed.",
-    ],
-    relatedRecipes: [
-      {
-        id: "7",
-        title: "Cacio e Pepe",
-        prepTime: 20,
-        cuisine: "Italian",
-      },
-      {
-        id: "8",
-        title: "Pasta Amatriciana",
-        prepTime: 35,
-        cuisine: "Italian",
-      },
-      {
-        id: "9",
-        title: "Pasta Aglio e Olio",
-        prepTime: 15,
-        cuisine: "Italian",
-      },
-    ],
+  const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
+  const [recipe, setRecipe] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            const recipeData = data[0];
+            // Convert string ingredients and instructions to arrays
+            setRecipe({
+              ...recipeData,
+              favourite: Number(recipeData.favourite),
+              ingredients: recipeData.ingredients
+                ? recipeData.ingredients.split("\n")
+                : [],
+              instructions: recipeData.instructions
+                ? recipeData.instructions.split("\n")
+                : [],
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching recipe:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipe();
+  }, [params.id]);
+
+  const handleFavourite = async () => {
+    try {
+      const newFavouriteValue = recipe.favourite === 1 ? 0 : 1;
+      const response = await fetch(
+        `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ favourite: newFavouriteValue }),
+        }
+      );
+
+      if (response.ok) {
+        setRecipe((prev: any) => ({
+          ...prev,
+          favourite: newFavouriteValue,
+        }));
+      }
+    } catch (error) {
+      console.error("Error updating favourite status:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this recipe? This action cannot be undone."
+      )
+    ) {
+      try {
+        const response = await fetch(
+          `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (response.ok) {
+          router.push("/recipes"); // Redirect to recipes page after successful deletion
+        } else {
+          console.error("Failed to delete recipe");
+        }
+      } catch (error) {
+        console.error("Error deleting recipe:", error);
+      }
+    }
+  };
+
+  if (loading) {
+    return <div className="container mx-auto py-10 px-4">Loading...</div>;
+  }
+
+  if (!recipe) {
+    return <div className="container mx-auto py-10 px-4">Recipe not found</div>;
+  }
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setRecipe((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setRecipe((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleIngredientChange = (index: number, value: string) => {
+    const newIngredients = [...recipe.ingredients];
+    newIngredients[index] = value;
+    setRecipe((prev: any) => ({
+      ...prev,
+      ingredients: newIngredients,
+    }));
+  };
+
+  const handleInstructionChange = (index: number, value: string) => {
+    const newInstructions = [...recipe.instructions];
+    newInstructions[index] = value;
+    setRecipe((prev: any) => ({
+      ...prev,
+      instructions: newInstructions,
+    }));
+  };
+
+  const addIngredient = () => {
+    setRecipe((prev: any) => ({
+      ...prev,
+      ingredients: [...prev.ingredients, ""],
+    }));
+  };
+
+  const addInstruction = () => {
+    setRecipe((prev: any) => ({
+      ...prev,
+      instructions: [...prev.instructions, ""],
+    }));
+  };
+
+  const removeIngredient = (index: number) => {
+    setRecipe((prev: any) => ({
+      ...prev,
+      ingredients: prev.ingredients.filter(
+        (_: string, i: number) => i !== index
+      ),
+    }));
+  };
+
+  const removeInstruction = (index: number) => {
+    setRecipe((prev: any) => ({
+      ...prev,
+      instructions: prev.instructions.filter(
+        (_: string, i: number) => i !== index
+      ),
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(
+        `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...recipe,
+            ingredients: recipe.ingredients.join("\n"),
+            instructions: recipe.instructions.join("\n"),
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setIsEditing(false);
+        router.refresh();
+      } else {
+        console.error("Failed to update recipe");
+      }
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+    }
   };
 
   return (
-    <div className="container mx-auto py-10 px-4">
-      <Button variant="ghost" size="sm" asChild className="mb-6">
+    <div className="container mx-auto py-10 px-4 max-w-5xl">
+      <Button variant="ghost" className="mb-6" asChild>
         <Link href="/recipes">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Recipes
         </Link>
       </Button>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2">
-          <div className="mb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-              <h1 className="text-3xl font-bold">{recipe.title}</h1>
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Heart className="mr-2 h-4 w-4" />
-                  Favorite
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share
-                </Button>
-                <Button size="sm">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="outline" className="bg-primary/10">
-                {recipe.cuisine}
-              </Badge>
-              <Badge variant="outline" className="bg-primary/10">
-                {recipe.difficulty}
-              </Badge>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="mr-1 h-4 w-4" />
-                {recipe.prepTime + recipe.cookTime} mins
-              </div>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Users className="mr-1 h-4 w-4" />
-                {recipe.servings} servings
-              </div>
-            </div>
-
-            <div className="aspect-video bg-primary/10 rounded-lg mb-6 flex items-center justify-center">
-              <div className="text-6xl">🍝</div>
-            </div>
-
-            <div className="flex items-center gap-4 mb-6">
-              <Avatar className="h-10 w-10">
-                <AvatarImage
-                  src={recipe.author.avatar}
-                  alt={recipe.author.name}
-                />
-                <AvatarFallback>{recipe.author.name.charAt(0)}</AvatarFallback>
-              </Avatar>
+      {loading ? (
+        <div>Loading...</div>
+      ) : !recipe ? (
+        <div>Recipe not found</div>
+      ) : isEditing ? (
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <Card>
+            <CardContent className="p-6 space-y-4">
               <div>
-                <div className="font-medium">{recipe.author.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {recipe.author.recipes} recipes
+                <label className="block text-sm font-medium mb-2">Title</label>
+                <Input
+                  name="title"
+                  value={recipe.title}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Description
+                </label>
+                <Textarea
+                  name="description"
+                  value={recipe.description}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Prep Time (minutes)
+                  </label>
+                  <Input
+                    name="prep_time"
+                    type="number"
+                    value={recipe.prep_time}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Cook Time (minutes)
+                  </label>
+                  <Input
+                    name="cook_time"
+                    type="number"
+                    value={recipe.cook_time}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cuisine">Cuisine</Label>
+                  <Select
+                    value={recipe.cuisine || ""}
+                    onValueChange={(value) =>
+                      handleSelectChange("cuisine", value)
+                    }
+                  >
+                    <SelectTrigger id="cuisine">
+                      <SelectValue placeholder="Select cuisine" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="italian">Italian</SelectItem>
+                      <SelectItem value="mexican">Mexican</SelectItem>
+                      <SelectItem value="indian">Indian</SelectItem>
+                      <SelectItem value="chinese">Chinese</SelectItem>
+                      <SelectItem value="american">American</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">Difficulty</Label>
+                  <Select
+                    value={recipe.difficulty || ""}
+                    onValueChange={(value) =>
+                      handleSelectChange("difficulty", value)
+                    }
+                  >
+                    <SelectTrigger id="difficulty">
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Easy</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="hard">Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Servings
+                  </label>
+                  <Input
+                    name="servings"
+                    type="number"
+                    value={recipe.servings}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
               </div>
-              <div className="ml-auto flex items-center">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(recipe.rating)
-                          ? "fill-yellow-500 text-yellow-500"
-                          : "text-muted-foreground"
-                      }`}
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Image URL
+                </label>
+                <Input
+                  name="image_url"
+                  value={recipe.image_url}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Ingredients</h2>
+                <Button type="button" onClick={addIngredient} variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Ingredient
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {recipe.ingredients.map((ingredient: string, index: number) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={ingredient}
+                      onChange={(e) =>
+                        handleIngredientChange(index, e.target.value)
+                      }
+                      placeholder={`Ingredient ${index + 1}`}
+                      required
                     />
-                  ))}
-                </div>
-                <span className="ml-2 text-sm font-medium">
-                  {recipe.rating}
-                </span>
-                <span className="ml-1 text-sm text-muted-foreground">
-                  ({recipe.reviews} reviews)
-                </span>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => removeIngredient(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <p className="text-muted-foreground">{recipe.description}</p>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Instructions</h2>
+                <Button
+                  type="button"
+                  onClick={addInstruction}
+                  variant="outline"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Step
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {recipe.instructions.map(
+                  (instruction: string, index: number) => (
+                    <div key={index} className="flex gap-2">
+                      <Textarea
+                        value={instruction}
+                        onChange={(e) =>
+                          handleInstructionChange(index, e.target.value)
+                        }
+                        placeholder={`Step ${index + 1}`}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => removeInstruction(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="flex flex-wrap gap-3 mt-6">
-              <Button variant="outline" size="sm">
-                <Bookmark className="mr-2 h-4 w-4" />
-                Save
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" size="lg">
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <h1 className="text-3xl font-bold">{recipe.title}</h1>
+
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleFavourite}>
+                <Heart
+                  className={`mr-2 h-4 w-4 ${
+                    recipe.favourite === 1 ? "fill-rose-500 text-rose-500" : ""
+                  }`}
+                />
+                {recipe.favourite === 1 ? "Favorited" : "Favorite"}
               </Button>
-              <Button variant="outline" size="sm">
-                <Printer className="mr-2 h-4 w-4" />
-                Print
+              <Button
+                size="sm"
+                className="bg-rose-500 hover:bg-rose-700"
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
               </Button>
-              <Button variant="outline" size="sm">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Comment
+              <Button size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
               </Button>
             </div>
           </div>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Clock className="mr-1 h-4 w-4" />
+              {Number(recipe.prep_time) + Number(recipe.cook_time)} mins
+            </div>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Users className="mr-1 h-4 w-4" />
+              {recipe.servings} servings
+            </div>
+          </div>
+
+          <div className="relative aspect-[16/9] w-full mb-6 rounded-lg overflow-hidden bg-primary/10">
+            {recipe.image_url ? (
+              <img
+                src={recipe.image_url}
+                alt={recipe.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-6xl">🍝</div>
+              </div>
+            )}
+          </div>
+
+          <p className="text-muted-foreground mb-8">{recipe.description}</p>
 
           <Tabs defaultValue="instructions" className="mb-8">
             <TabsList className="w-full grid grid-cols-4">
@@ -208,25 +507,13 @@ export default function RecipeDetailPage({
 
             <TabsContent value="instructions" className="mt-6">
               <ol className="space-y-6 list-decimal list-inside">
-                {recipe.instructions.map((step, index) => (
+                {recipe.instructions.map((step: string, index: number) => (
                   <li key={index} className="pl-2">
                     <div className="inline font-medium">Step {index + 1}:</div>{" "}
                     {step}
                   </li>
                 ))}
               </ol>
-
-              <div className="mt-8 bg-primary/5 rounded-lg p-4">
-                <h3 className="font-medium mb-2">Chef&apos;s Tips</h3>
-                <ul className="space-y-2">
-                  {recipe.tips.map((tip, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <div className="text-primary mt-1">💡</div>
-                      <p className="text-sm">{tip}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             </TabsContent>
 
             <TabsContent value="ingredients" className="mt-6">
@@ -247,112 +534,51 @@ export default function RecipeDetailPage({
                 </div>
                 <Separator className="mb-4" />
                 <ul className="space-y-3">
-                  {recipe.ingredients.map((ingredient, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <div className="h-5 w-5 rounded-md border flex items-center justify-center">
-                        <div className="h-3 w-3 rounded-sm bg-primary/0 hover:bg-primary/20 cursor-pointer transition-colors"></div>
-                      </div>
-                      <span>{ingredient}</span>
-                    </li>
-                  ))}
+                  {recipe.ingredients.map(
+                    (ingredient: string, index: number) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <div className="h-5 w-5 rounded-md border flex items-center justify-center">
+                          <div className="h-3 w-3 rounded-sm bg-primary/0 hover:bg-primary/20 cursor-pointer transition-colors"></div>
+                        </div>
+                        <span>{ingredient}</span>
+                      </li>
+                    )
+                  )}
                 </ul>
                 <Separator className="mt-4 mb-4" />
                 <Button className="w-full">Add All To Shopping List</Button>
               </div>
             </TabsContent>
           </Tabs>
-        </div>
 
-        <div>
           <Card className="mb-6">
             <CardContent className="p-6">
               <h3 className="font-medium mb-4">Recipe Details</h3>
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Prep Time:</span>
-                  <span>{recipe.prepTime} mins</span>
+                  <span>{recipe.prep_time} mins</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cook Time:</span>
-                  <span>{recipe.cookTime} mins</span>
+                  <span>{recipe.cook_time} mins</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Time:</span>
-                  <span>{recipe.prepTime + recipe.cookTime} mins</span>
+                  <span>
+                    {Number(recipe.prep_time) + Number(recipe.cook_time)} mins
+                  </span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Servings:</span>
                   <span>{recipe.servings}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cuisine:</span>
-                  <span>{recipe.cuisine}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Difficulty:</span>
-                  <span>{recipe.difficulty}</span>
-                </div>
               </div>
             </CardContent>
           </Card>
-
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <h3 className="font-medium mb-4">Related Recipes</h3>
-              <div className="space-y-4">
-                {recipe.relatedRecipes.map((related) => (
-                  <Link
-                    key={related.id}
-                    href={`/recipes/${related.id}`}
-                    className="block"
-                  >
-                    <div className="flex items-center gap-3 group">
-                      <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                        <div className="text-lg">🍝</div>
-                      </div>
-                      <div>
-                        <div className="font-medium group-hover:text-primary transition-colors">
-                          {related.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {related.cuisine} • {related.prepTime} mins
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-medium mb-4">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="bg-primary/5">
-                  Italian
-                </Badge>
-                <Badge variant="outline" className="bg-primary/5">
-                  Pasta
-                </Badge>
-                <Badge variant="outline" className="bg-primary/5">
-                  Quick Meals
-                </Badge>
-                <Badge variant="outline" className="bg-primary/5">
-                  Dinner
-                </Badge>
-                <Badge variant="outline" className="bg-primary/5">
-                  Eggs
-                </Badge>
-                <Badge variant="outline" className="bg-primary/5">
-                  Cheese
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

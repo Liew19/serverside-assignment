@@ -1,32 +1,176 @@
-import Link from "next/link";
+"use client";
+
 import {
+  ArrowLeft,
+  ChevronDown,
   Clock,
   Filter,
+  Heart,
   Plus,
   Search,
-  ChevronDown,
-  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { RecipeCard } from "@/components/ui/recipe-card";
+
+interface Recipe {
+  difficulty: string;
+  cuisine: string;
+  recipe_id: number;
+  user_id: number;
+  title: string;
+  description: string;
+  prep_time: number;
+  cook_time: number;
+  servings: number;
+  image_url?: string;
+  ingredients: string;
+  instructions: string;
+  created_at: string;
+  favourite: number;
+}
 
 export default function RecipesPage() {
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
+  const [sortFilter, setSortFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost/assignmentbackend/api/recipes.php${
+            searchQuery ? `?search=${searchQuery}` : ""
+          }`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched recipes data:", data);
+          // Convert favourite to number if it's not already
+          const processedData = data.map((recipe: Recipe) => ({
+            ...recipe,
+            favourite: Number(recipe.favourite),
+          }));
+          console.log("Processed recipes data:", processedData);
+          setRecipes(processedData);
+        }
+      } catch (error) {
+        console.error("Error fetching recipes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, [searchQuery]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleFavourite = async (
+    recipeId: number,
+    currentFavourite: number
+  ) => {
+    try {
+      console.log("Updating favourite:", { recipeId, currentFavourite });
+
+      const newFavouriteValue = currentFavourite === 0 ? 1 : 0;
+
+      const response = await fetch(
+        `http://localhost/assignmentbackend/api/recipes.php?id=${recipeId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ favourite: newFavouriteValue }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("Server response:", data);
+
+      if (response.ok && data.success && data.recipe) {
+        console.log("Updating recipe state:", {
+          oldFavourite: currentFavourite,
+          newFavourite: data.recipe.favourite,
+        });
+
+        setRecipes((prev) =>
+          prev.map((recipe) =>
+            recipe.recipe_id === recipeId
+              ? { ...recipe, favourite: newFavouriteValue }
+              : recipe
+          )
+        );
+      } else {
+        console.error(
+          "Failed to update favourite:",
+          data.error || "Unknown error"
+        );
+      }
+    } catch (error) {
+      console.error("Error updating favourite status:", error);
+    }
+  };
+
+  const filteredRecipes = recipes
+    .filter((recipe) => {
+      // Apply difficulty filter
+      if (difficultyFilter) {
+        return (
+          recipe.difficulty.toLowerCase() === difficultyFilter.toLowerCase()
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // Apply sort filter
+      switch (sortFilter) {
+        case "newest":
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        case "oldest":
+          return (
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+        case "a-z":
+          return a.title.localeCompare(b.title);
+        case "prep-time":
+          return a.prep_time - b.prep_time;
+        default:
+          return 0;
+      }
+    });
+
+  const handleDifficultyFilter = (difficulty: string) => {
+    setDifficultyFilter(difficulty);
+  };
+
+  const handleSortFilter = (sortType: string) => {
+    setSortFilter(sortType);
+  };
+
+  if (loading) {
+    return <div className="container mx-auto py-10 px-4">Loading...</div>;
+  }
+
   return (
     <div className="container mx-auto py-10 px-4">
       <Button variant="ghost" className="mb-6" asChild>
@@ -57,6 +201,8 @@ export default function RecipesPage() {
               type="search"
               placeholder="Search recipes by name, ingredient, or cuisine..."
               className="w-full pl-8"
+              value={searchQuery}
+              onChange={handleSearch}
             />
           </div>
         </div>
@@ -68,9 +214,20 @@ export default function RecipesPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem>Easy Difficulty</DropdownMenuItem>
-              <DropdownMenuItem>Medium Difficulty</DropdownMenuItem>
-              <DropdownMenuItem>Hard Difficulty</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDifficultyFilter("easy")}>
+                Easy Difficulty
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDifficultyFilter("medium")}
+              >
+                Medium Difficulty
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDifficultyFilter("hard")}>
+                Hard Difficulty
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDifficultyFilter(null)}>
+                Clear Filter
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -81,10 +238,21 @@ export default function RecipesPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Newest First</DropdownMenuItem>
-              <DropdownMenuItem>Oldest First</DropdownMenuItem>
-              <DropdownMenuItem>A-Z</DropdownMenuItem>
-              <DropdownMenuItem>Prep Time (Low to High)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortFilter("newest")}>
+                Newest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortFilter("oldest")}>
+                Oldest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortFilter("a-z")}>
+                A-Z
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSortFilter("prep-time")}>
+                Prep Time (Low to High)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortFilter(null)}>
+                Clear Sort
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -106,36 +274,65 @@ export default function RecipesPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+            {filteredRecipes.map((recipe) => (
+              <RecipeCard
+                key={recipe.recipe_id}
+                recipe={recipe}
+                onFavourite={() =>
+                  handleFavourite(recipe.recipe_id, recipe.favourite)
+                }
+              />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="my-recipes" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
             {recipes
-              .filter((r) => r.isOwn)
+              .filter((r) => r.user_id === 1)
               .map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe.recipe_id}
+                  recipe={recipe}
+                  onFavourite={() =>
+                    handleFavourite(recipe.recipe_id, recipe.favourite)
+                  }
+                />
               ))}
           </div>
         </TabsContent>
         <TabsContent value="favorites" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
             {recipes
-              .filter((r) => r.isFavorite)
+              .filter((r) => r.favourite === 1)
               .map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe.recipe_id}
+                  recipe={recipe}
+                  onFavourite={() =>
+                    handleFavourite(recipe.recipe_id, recipe.favourite)
+                  }
+                />
               ))}
           </div>
         </TabsContent>
         <TabsContent value="recent" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
             {recipes
-              .filter((r) => r.isRecent)
+              .sort(
+                (a, b) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
+              )
+              .slice(0, 6)
               .map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe.recipe_id}
+                  recipe={recipe}
+                  onFavourite={() =>
+                    handleFavourite(recipe.recipe_id, recipe.favourite)
+                  }
+                />
               ))}
           </div>
         </TabsContent>
@@ -147,162 +344,3 @@ export default function RecipesPage() {
     </div>
   );
 }
-
-interface Recipe {
-  id: string;
-  title: string;
-  description: string;
-  prepTime: number;
-  cuisine: string;
-  difficulty: string;
-  rating?: number;
-  isOwn?: boolean;
-  isFavorite?: boolean;
-  isRecent?: boolean;
-}
-
-function RecipeCard({ recipe }: { recipe: Recipe }) {
-  return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-video bg-primary/10 relative">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-12 w-12 text-primary/40">🍽️</div>
-        </div>
-        {recipe.isFavorite && (
-          <div className="absolute top-2 right-2">
-            <div className="text-rose-500">❤️</div>
-          </div>
-        )}
-      </div>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle>
-            <Link
-              href={`/recipes/${recipe.id}`}
-              className="hover:text-primary transition-colors"
-            >
-              {recipe.title}
-            </Link>
-          </CardTitle>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          <Badge variant="outline" className="bg-primary/10">
-            {recipe.cuisine}
-          </Badge>
-          <Badge variant="outline" className="bg-primary/10">
-            {recipe.difficulty}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground line-clamp-2 text-sm">
-          {recipe.description}
-        </p>
-
-        {recipe.rating && (
-          <div className="flex items-center mt-2">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <span
-                  key={i}
-                  className={
-                    i < Math.floor(recipe.rating!)
-                      ? "text-yellow-500"
-                      : "text-gray-300"
-                  }
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-            <span className="ml-1 text-sm text-muted-foreground">
-              {recipe.rating}
-            </span>
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Clock className="mr-1 h-4 w-4" />
-          {recipe.prepTime} mins
-        </div>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/recipes/${recipe.id}`}>View Recipe</Link>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
-// Sample data
-const recipes: Recipe[] = [
-  {
-    id: "1",
-    title: "Spaghetti Carbonara",
-    description:
-      "A classic Italian pasta dish with eggs, cheese, pancetta, and black pepper.",
-    prepTime: 30,
-    cuisine: "Italian",
-    difficulty: "Medium",
-    rating: 4.8,
-    isOwn: true,
-    isFavorite: true,
-    isRecent: true,
-  },
-  {
-    id: "2",
-    title: "Chicken Tikka Masala",
-    description:
-      "Grilled chunks of chicken enveloped in a creamy spiced tomato sauce.",
-    prepTime: 45,
-    cuisine: "Indian",
-    difficulty: "Medium",
-    rating: 4.6,
-    isOwn: true,
-    isRecent: true,
-  },
-  {
-    id: "3",
-    title: "Beef Tacos",
-    description:
-      "Seasoned ground beef in crispy taco shells with fresh toppings.",
-    prepTime: 25,
-    cuisine: "Mexican",
-    difficulty: "Easy",
-    rating: 4.5,
-    isFavorite: true,
-  },
-  {
-    id: "4",
-    title: "Vegetable Stir Fry",
-    description:
-      "A quick and healthy mix of fresh vegetables cooked in a savory sauce.",
-    prepTime: 20,
-    cuisine: "Asian",
-    difficulty: "Easy",
-    rating: 4.2,
-    isRecent: true,
-  },
-  {
-    id: "5",
-    title: "Greek Salad",
-    description:
-      "Fresh vegetables, olives, and feta cheese dressed with olive oil and herbs.",
-    prepTime: 15,
-    cuisine: "Greek",
-    difficulty: "Easy",
-    rating: 4.7,
-    isFavorite: true,
-  },
-  {
-    id: "6",
-    title: "Chocolate Chip Cookies",
-    description:
-      "Classic homemade cookies with chocolate chips and a soft, chewy center.",
-    prepTime: 35,
-    cuisine: "Dessert",
-    difficulty: "Easy",
-    rating: 4.9,
-    isOwn: true,
-  },
-];
