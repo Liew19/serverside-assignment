@@ -1,6 +1,6 @@
 <?php
 require_once '../models/Votes.php';
-require_once '../../database.php';
+require_once '../../database/database.php';
 require_once '../models/Competition.php';
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: http://localhost:3000"); // Specific origin for React app

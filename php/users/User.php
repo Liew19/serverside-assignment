@@ -1,5 +1,5 @@
 <?php
-require_once 'D:\php2\htdocs\server\php\database.php';
+require_once 'D:\php2\htdocs\server\php\database\database.php';
 class User
 {
   public static function register($username, $email, $password, $database)
@@ -49,5 +49,13 @@ class User
       return false;   //if no user found return false
     }
     return $database->fetchAll($result);
+  }
+
+  public static function checkRole($user_id, $database)
+  {
+    $sql = "SELECT role from Users WHERE user_id = '$user_id'";
+    $result = $database->query($sql);
+    $result = mysqli_fetch_assoc($result);
+    return $result['role'] === 'admin';
   }
 }

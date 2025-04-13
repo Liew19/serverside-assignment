@@ -1,5 +1,5 @@
 <?php
-require_once '../../database.php';
+require_once '../../database/database.php';
 class Competition
 {
   private static function validateAndFormatDate($date)
@@ -116,7 +116,7 @@ class Competition
   }
 
   //get all competitions with pagination
-  public static function getAllCompetitions($page, $perPage, $database, $status)    //in api call, set total page by sql count 
+  public static function getAllCompetitions($database)    //in api call, set total page by sql count 
   {
     $conn = $database->conn;
     $sql = "SELECT competition_id, title, description, status, prize, start_date, end_date, voting_end_date FROM competitions";

@@ -67,11 +67,11 @@ CREATE TABLE IF NOT EXISTS votes (
 -- Insert sample users
 INSERT INTO users (username, email, password, role) VALUES
 ('admin123', 'admin@example.com', '$2a$12$hPUix6kRKoUIIh1PQJckEOc3lKr6o43cU1xkITUfRYTnu1dbVMaSq', 'admin'), -- hashed 'password'
-('john_doe', 'john@example.com', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOSsqcpZj1BCqZ5BhXCBIWiT3nKSm', 'user'), -- hashed 'password123'
-('jane_smith', 'jane@example.com', '$2a$10$bNdPVIF0tKHK9aaH89Tw8eMteJqNZOPPPa.WcD8tJVxS7Yy3ASuai', 'user'), -- hashed 'securepwd456'
-('chef_mike', 'mike@cooking.com', '$2a$10$QlOu1QqHNKTZ0LKQSuU9h.4vNiPA52Z4cOZhpKHRDJPIqn4oXRW7.', 'user'), -- hashed 'cookmaster789'
-('foodie_lisa', 'lisa@foodblog.com', '$2a$10$9jGzd/XvQzoYdWtEYIMXnewF3EGAh3TEgU0GTvxWVqkNO1fFGPHNi', 'user'), -- hashed 'tasty2023'
-('gordon_r', 'gordon@cuisine.net', '$2a$10$2nbSHOpVJEPUMV0VXQmQxeg0KbzS9QMjYlWVPY.AVEqFQn0yimcOq', 'user'); -- hashed 'cheflife555'
+('john_doe', 'john@example.com', '$2a$12$iYSGSa4o2fIVS0BGS68vbumGao6ojenrVEIEzb190Wfh.nnOL3wgy', 'user'), -- hashed 'password123'
+('jane_smith', 'jane@example.com', '$2a$12$C3xEt0PY0gbdNpt19b.40uLzmzNHPvHyAyGzKI0mHZWheeeYeq02u', 'user'), -- hashed 'securepwd456'
+('chef_mike', 'mike@cooking.com', '$2a$12$ZPXdu1bgmCe9obLvEioHdOPGAU.iaBhyxOpsusJ6FEGwm0Eax.u4G', 'user'), -- hashed 'cookmaster789'
+('foodie_lisa', 'lisa@foodblog.com', '$2a$12$lqJqJhEohau9LGoPKZhLOuzVhcBv7/Ltum6t0rmFi5vANr.WE.yxi', 'user'), -- hashed 'tasty2023'
+('gordon_r', 'gordon@cuisine.net', '$2a$12$nVOK3v6cA4WtQ9P8dEP93.tbeUOJHDiIVwCxmCFUcogOxPuM00jWW', 'user'); -- hashed 'cheflife555'
 
 -- Insert sample recipes
 INSERT INTO recipes (user_id, title, description, ingredients, instructions, prep_time, cook_time, servings, image_url) VALUES

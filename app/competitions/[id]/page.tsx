@@ -29,7 +29,6 @@ export default function CompetitionDetailPage({
   const competitionId = params.id
   const searchParams = useSearchParams();
   const user_id = searchParams.get("user_id");
-  console.log("user id is", user_id);
 
   interface Competition {
     competition_id: string
@@ -83,9 +82,38 @@ export default function CompetitionDetailPage({
   const [submissionCount, setSubmissionCount] = useState(0);
   const [winner, setWinner] = useState<{entry_id: string, title: string, number_of_votes: string} | null>(null);
   const [showEndCompetitionDialog, setShowEndCompetitionDialog] = useState(false)
+  const [admin, setAdmin] = useState(false);
 
   useEffect(() => {
     if (!user_id || !competitionId) return;
+    const checkStatus = async() =>{   //to check if user did fake admin id in get
+      const checkUrl = `http://localhost/server/php/competition/api/user.php`
+      const checkStatus = await fetch(checkUrl, {
+        credentials: "include",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            action: "check_status",
+            user_id: user_id
+          }).toString(),
+      })
+      const status = await checkStatus.json()
+      console.log("status", status);
+      if(status.status == true){
+        if(status.admin == true){
+          setAdmin(true);
+          console.log("you are admin")
+        }else{
+          setAdmin(false);
+          console.log("you are not admin")
+        }
+      }else{
+        setAdmin(false);
+      }
+    }
+    checkStatus();
     const fetchCompetitionData = async () => {
       setIsLoading(true)
       try {
@@ -119,6 +147,7 @@ export default function CompetitionDetailPage({
             entry_id: vote.entry_id,
           }))
           setUserVotedEntries(formattedVotes)
+          console.log("User vote history" + voteData);
         }
 
         //fetch user recipe
@@ -205,7 +234,7 @@ export default function CompetitionDetailPage({
 
   const [votedEntries, setVotedEntries] = useState<string[]>([])
 
-  const handleVoteClick = async (entryId: string) => {
+  const handleVoteClick = async (entryId: string, userId: string) => {
     try {
       const response = await fetch("http://localhost/server/php/competition/api/user.php", {
         method: "POST",
@@ -215,7 +244,7 @@ export default function CompetitionDetailPage({
         },
         body: new URLSearchParams({
           action: "vote_recipe",
-          user_id: "2",
+          user_id: userId,
           entry_id: entryId,
         }).toString(),
       })
@@ -315,7 +344,7 @@ export default function CompetitionDetailPage({
           </Link>
         </Button>
         
-        {competition.status === "active" && (
+        {competition.status === "active" && admin &&(
           <Button 
             onClick={() => setShowEndCompetitionDialog(true)}
             variant="destructive"
@@ -399,30 +428,32 @@ export default function CompetitionDetailPage({
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleVoteClick(entry.entry_id)}
-                              disabled={
-                                competition.status !== "active" || 
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleVoteClick(entry.entry_id, user_id!)}
+                            disabled={
+                              competition.status !== "active" || 
+                              userVotedEntries.some((vote) => vote.entry_id === entry.entry_id) || 
+                              user_id === null
+                            }
+                            className={
+                              competition.status !== "active" || 
+                              userVotedEntries.some((vote) => vote.entry_id === entry.entry_id) || 
+                              user_id === null
+                                ? "opacity-50 bg-gray-100 cursor-not-allowed"
+                                : ""
+                            }
+                          >
+                            <ThumbsUp
+                              className={`mr-1 h-4 w-4 ${
                                 userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
-                              }
-                              className={
-                                competition.status !== "active" || 
-                                userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
-                                  ? "opacity-50 bg-gray-100"
+                                  ? "fill-current text-primary"
                                   : ""
-                              }
-                            >
-                              <ThumbsUp
-                                className={`mr-1 h-4 w-4 ${
-                                  userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
-                                    ? "fill-current text-primary"
-                                    : ""
-                                }`}
-                              />
-                              {entry.number_of_votes}
-                            </Button>
+                              }`}
+                            />
+                            {entry.number_of_votes}
+                          </Button>
                           </div>
                         </div>
                         <div className="flex justify-end mt-2">
@@ -512,7 +543,6 @@ export default function CompetitionDetailPage({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleVoteClick(entry.entry_id)}
                               disabled={userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)}
                               className={
                                 userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
@@ -558,7 +588,7 @@ export default function CompetitionDetailPage({
           recipe_id: recipe.recipe_id.toString(), // Use the actual recipe_id from your data
           title: recipe.title
         }))}
-        userId={user_id || "2"}
+        userId={user_id!}
       />
       <AlertDialog open={showEndCompetitionDialog} onOpenChange={setShowEndCompetitionDialog}>
         <AlertDialogContent>

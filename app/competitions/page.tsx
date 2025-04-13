@@ -42,7 +42,6 @@ interface Competition {
 
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
-  
 
   useEffect(() => {
     const url = `http://localhost/server/php/competition/api/user.php?action=get_all_competitions`;
@@ -142,7 +141,15 @@ export default function CompetitionsPage() {
 
 function CompetitionCard({ competition }: { competition: Competition }) {
   const router = useRouter();
-  const user_id = 2;
+  function getCookie(name: string): string | null {
+    if (typeof document === 'undefined' || !document.cookie) return null;
+  
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()!.split(';').shift()!;
+    return null;
+  }
+  const user_id = getCookie('user_id'); 
   
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">

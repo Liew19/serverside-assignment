@@ -8,7 +8,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, Cache-Control
 require_once "../users/User.php";
 
 session_start();
-$database = new Database("localhost", "root", "password", "recipe_database");
+$database = new Database("localhost", "root", "password", "database_recipe");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'login') {
   $email = $_POST['email'];
@@ -23,7 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     http_response_code(200);
     echo json_encode([
       'status' => 'success',
-      'message' => 'logged in successfully'
+      'message' => 'logged in successfully',
+      'user_id' => $user['user_id'],
+      'username' => $user['username'],
     ]);
   } else {
     http_response_code(400);

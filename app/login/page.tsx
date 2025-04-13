@@ -57,10 +57,13 @@ export default function LoginPage() {
       })
 
       const data = await response.json()
-      console.log("Login response:", data)
-
+      
       if (data.status === "success") {
-        console.log("Login successful, setting success state")
+        const username = data.username;
+        const user_id = data.user_id;
+        console.log("Login successful")
+        document.cookie = `user_id=${user_id}; path=/;`; 
+        document.cookie = `username=${username}; path=/;`;
         setSuccess(true)
       } else {
         console.log("Login failed:", data.message)

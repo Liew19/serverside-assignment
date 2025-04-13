@@ -1,6 +1,6 @@
 <?php
 require_once '../models/Votes.php';
-require_once '../../database.php';
+require_once '../../database/database.php';
 require_once '../models/Competition.php';
 require_once '../../users/User.php';
 
@@ -19,12 +19,34 @@ if (!$database->conn) {
   exit;
 }
 
-//Get all competitions  //done
+//check user status, if cookie correct with session (user id)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_status') {
+
+  if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['status' => 'No session']);
+    exit();
+  }
+
+  $userID = $_POST['user_id'] ?? null;
+  $admin = User::checkRole($userID, $database);
+
+  if ($userID && $userID == $_SESSION['user_id']) {
+    http_response_code(200);
+    if ($admin) {
+      echo json_encode(["status" => true, "admin" => true]);
+    } else {
+      echo json_encode(["status" => true, "admin" => false]);
+    }
+  } else {
+    http_response_code(401);
+    echo json_encode(['status' => 'Failed authentication']);
+  }
+}
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_all_competitions') {
-  $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;  //Which page to view, (pageNum * perPage = offset)
-  $perPage = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;  //default 10 per page, can change in api call
-  $active = isset($_GET['active']) ? $_GET['active'] : 'active';  //default active competitions(viewing current ongoing competition)
-  $result = Competition::getAllCompetitions($page, $perPage, $database, $active);
+  $result = Competition::getAllCompetitions($database);
   if ($result) {
     http_response_code(200);
     echo json_encode(['message' => 'Competitions fetched successfully', 'data' => $result]);
