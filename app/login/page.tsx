@@ -43,7 +43,8 @@ export default function LoginPage() {
 
     try {
       console.log("Sending login request...")
-      const response = await fetch("http://localhost/Recipe/auth/login.php", {
+      const response = await fetch("http://localhost/server/php/auth/login.php", {
+        credentials: "include",
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",

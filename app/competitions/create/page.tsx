@@ -49,7 +49,8 @@ export default function CreateCompetitionPage() {
         prize: formData.prize
       }).toString()
 
-      const response = await fetch("http://localhost/Recipe/api/admin.php", {
+      const response = await fetch("http://localhost/server/php/competition/api/admin.php", {
+        credentials: "include",
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"

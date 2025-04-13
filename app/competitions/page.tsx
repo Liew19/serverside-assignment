@@ -45,8 +45,9 @@ export default function CompetitionsPage() {
   
 
   useEffect(() => {
-    const url = `http://localhost/Recipe/api/api.php?action=get_all_competitions`;
+    const url = `http://localhost/server/php/competition/api/user.php?action=get_all_competitions`;
     fetch(url, {
+      credentials: "include",
       method: 'GET',  // Make sure you're sending the correct request method
       headers: {
         'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
@@ -218,58 +219,3 @@ function CompetitionCard({ competition }: { competition: Competition }) {
     </Card>
   );
 }
-
-// // Sample data
-// const competitions: Competition[] = [
-//   {
-//     id: "1",
-//     title: "Summer Grilling Championship",
-//     description:
-//       "Show off your best grilling recipes in our summer championship! Create an original grilled dish that showcases seasonal ingredients.",
-//     status: "active",
-//     prize: "$500",
-//   },
-//   {
-//     id: "2",
-//     title: "Baking Bonanza",
-//     description:
-//       "Calling all bakers! Show us your most impressive cake, bread, or pastry creation in this exciting baking competition.",
-//     status: "active",
-//     prize: "$250",
-//   },
-//   {
-//     id: "3",
-//     title: "Healthy Meal Challenge",
-//     description:
-//       "Create a nutritious and delicious meal under 500 calories that doesn't sacrifice flavor.",
-//     status: "upcoming",
-//     startDate: "June 15, 2023",
-//     prize: "$300",
-//   },
-//   {
-//     id: "4",
-//     title: "International Cuisine Showdown",
-//     description:
-//       "Prepare an authentic dish from a country other than your own. Judging based on authenticity, presentation, and taste.",
-//     status: "upcoming",
-//     startDate: "July 1, 2023",
-//     prize: "$400",
-//   },
-//   {
-//     id: "5",
-//     title: "Spring Dessert Contest",
-//     description:
-//       "Our spring dessert competition featured light, refreshing treats perfect for the season.",
-//     status: "past",
-//     endDate: "April 30, 2023",
-//     prize: "$350",
-//   },
-//   {
-//     id: "6",
-//     title: "Soup & Stew Championship",
-//     description:
-//       "Participants created hearty and flavorful soups and stews from around the world.",
-//     status: "past",
-//     endDate: "March 15, 2023",
-//   },
-// ];

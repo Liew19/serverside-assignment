@@ -90,12 +90,12 @@ export default function CompetitionDetailPage({
       setIsLoading(true)
       try {
         // Fetch competition details
-        const competitionUrl = `http://localhost/Recipe/api/api.php?action=get_competition_by_id&competition_id=${competitionId}`
+        const competitionUrl = `http://localhost/server/php/competition/api/user.php?action=get_competition_by_id&competition_id=${competitionId}`
         const competitionResponse = await fetch(competitionUrl, {
+          credentials: "include",
           method: "GET",
           headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/x-www-form-urlencoded"
           },
         })
         const competitionData = await competitionResponse.json()
@@ -105,8 +105,9 @@ export default function CompetitionDetailPage({
         fetchEntries();
 
         // Fetch user voted entries
-        const checkVoteUrl = `http://localhost/Recipe/api/api.php?action=get_user_voted_entries&user_id=${user_id}&competition_id=${competitionId}`
+        const checkVoteUrl = `http://localhost/server/php/competition/api/user.php?action=get_user_voted_entries&user_id=${user_id}&competition_id=${competitionId}`
         const checkVoteResponse = await fetch(checkVoteUrl, {
+          credentials: "include",
           method: "GET",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -121,8 +122,9 @@ export default function CompetitionDetailPage({
         }
 
         //fetch user recipe
-        const userRecipeUrl = `http://localhost/Recipe/api/api.php?action=get_user_recipe&user_id=${user_id}`
+        const userRecipeUrl = `http://localhost/server/php/competition/api/user.php?action=get_user_recipe&user_id=${user_id}`
         const checkUserRecipeResponse = await fetch(userRecipeUrl, {
+          credentials: "include",
           method: "GET",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -139,8 +141,9 @@ export default function CompetitionDetailPage({
 
         //fetch winner is past competition is used
         if (competitionData.data && competitionData.data.status === "past") {
-          const winnerUrl = `http://localhost/Recipe/api/api.php?action=get_winner&competition_id=${competitionId}`
+          const winnerUrl = `http://localhost/server/php/competition/api/user.php?action=get_winner&competition_id=${competitionId}`
           const winnerResponse = await fetch(winnerUrl, {
+            credentials: "include",
             method: "GET",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded",
@@ -172,9 +175,10 @@ export default function CompetitionDetailPage({
   }, [submissionCount])
   
   async function fetchEntries(){
-    const entriesUrl = `http://localhost/Recipe/api/api.php?action=get_competition_recipes&competition_id=${competitionId}`
+    const entriesUrl = `http://localhost/server/php/competition/api/user.php?action=get_competition_recipes&competition_id=${competitionId}`
         const entriesResponse = await fetch(entriesUrl, {
           method: "GET",
+          credentials: "include",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
@@ -203,8 +207,9 @@ export default function CompetitionDetailPage({
 
   const handleVoteClick = async (entryId: string) => {
     try {
-      const response = await fetch("http://localhost/Recipe/api/api.php", {
+      const response = await fetch("http://localhost/server/php/competition/api/user.php", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
@@ -237,8 +242,9 @@ export default function CompetitionDetailPage({
 
     const fetchEntries = async () => {
       try {
-        const entriesUrl = `http://localhost/Recipe/api/api.php?action=get_competition_recipes&competition_id=${competitionId}`
+        const entriesUrl = `http://localhost/server/php/competition/api/user.php?action=get_competition_recipes&competition_id=${competitionId}`
         const entriesResponse = await fetch(entriesUrl, {
+          credentials: "include",
           method: "GET",
           headers: {
             Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
@@ -268,7 +274,8 @@ export default function CompetitionDetailPage({
 
   const handleEndCompetition = async () => {
     try {
-      const response = await fetch("http://localhost/Recipe/api/admin.php", {
+      const response = await fetch("http://localhost/server/php/competition/api/admin.php", {
+        credentials: "include",
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",

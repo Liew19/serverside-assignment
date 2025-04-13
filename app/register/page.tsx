@@ -41,7 +41,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost/Recipe/auth/register.php", {
+      const response = await fetch("http://localhost/server/php/auth/register.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",

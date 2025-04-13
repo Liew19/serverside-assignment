@@ -68,7 +68,8 @@ export default function RecipeSubmissionForm({
 
     setIsLoading(true)
     try {
-      const response = await fetch("http://localhost/Recipe/api/api.php", {
+      const response = await fetch("http://localhost/server/php/competition/api/user.php", {
+        credentials: 'include',
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
