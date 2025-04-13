@@ -78,7 +78,7 @@ export default function CompetitionsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/competitions/create">Create Competition</Link> 
+          <Link href="/competitions/create">Create Competition</Link>
         </Button>
       </div>
 
@@ -152,7 +152,7 @@ function CompetitionCard({ competition }: { competition: Competition }) {
         {competition.prize && (
           <div className="absolute top-3 right-3">
             <div className="bg-background/80 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
-              {competition.prize} Prize
+            Prize RM{competition.prize} 
             </div>
           </div>
         )}

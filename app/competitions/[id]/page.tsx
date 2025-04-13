@@ -9,6 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import RecipeSubmissionForm from "@/components/recipe-submission-form"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // In Next.js App Router, page props contain the route parameters
 export default function CompetitionDetailPage({
@@ -19,6 +29,7 @@ export default function CompetitionDetailPage({
   const competitionId = params.id
   const searchParams = useSearchParams();
   const user_id = searchParams.get("user_id");
+  console.log("user id is", user_id);
 
   interface Competition {
     competition_id: string
@@ -70,6 +81,8 @@ export default function CompetitionDetailPage({
   const [showSubmissionForm, setShowSubmissionForm] = useState(false)
   const [userRecipes, setUserRecipes] = useState<userRecipe[]>([]);
   const [submissionCount, setSubmissionCount] = useState(0);
+  const [winner, setWinner] = useState<{entry_id: string, title: string, number_of_votes: string} | null>(null);
+  const [showEndCompetitionDialog, setShowEndCompetitionDialog] = useState(false)
 
   useEffect(() => {
     if (!user_id || !competitionId) return;
@@ -96,7 +109,6 @@ export default function CompetitionDetailPage({
         const checkVoteResponse = await fetch(checkVoteUrl, {
           method: "GET",
           headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
             "Content-Type": "application/x-www-form-urlencoded",
           },
         })
@@ -109,12 +121,10 @@ export default function CompetitionDetailPage({
         }
 
         //fetch user recipe
-        
         const userRecipeUrl = `http://localhost/Recipe/api/api.php?action=get_user_recipe&user_id=${user_id}`
         const checkUserRecipeResponse = await fetch(userRecipeUrl, {
           method: "GET",
           headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
             "Content-Type": "application/x-www-form-urlencoded",
           },
         })
@@ -125,6 +135,28 @@ export default function CompetitionDetailPage({
             recipe_id: recipe.recipe_id
           }))
           setUserRecipes(formattedRecipe);
+        }
+
+        //fetch winner is past competition is used
+        if (competitionData.data && competitionData.data.status === "past") {
+          const winnerUrl = `http://localhost/Recipe/api/api.php?action=get_winner&competition_id=${competitionId}`
+          const winnerResponse = await fetch(winnerUrl, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          })
+          const winnerData = await winnerResponse.json()
+          if (winnerData.data) {
+            console.log(winnerData)
+            const formattedWinner = winnerData.data.map((win: any) =>({
+              entry_id: win.entry_id,
+              title: win.title,
+              number_of_votes: win.number_of_votes,
+            }))
+            setWinner(formattedWinner[0]);
+            console.log("winner is ", winner);
+          }
         }
       } catch (error) {
         console.error("Error fetching competition data:", error)
@@ -138,13 +170,12 @@ export default function CompetitionDetailPage({
   useEffect(()=>{
     fetchEntries();
   }, [submissionCount])
-
+  
   async function fetchEntries(){
     const entriesUrl = `http://localhost/Recipe/api/api.php?action=get_competition_recipes&competition_id=${competitionId}`
         const entriesResponse = await fetch(entriesUrl, {
           method: "GET",
           headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
             "Content-Type": "application/x-www-form-urlencoded",
           },
         })
@@ -164,9 +195,9 @@ export default function CompetitionDetailPage({
         }
   }
 
-  // useEffect(() =>{
-  //   console.log("Recipe is ", userRecipes);
-  // }, [userRecipes]);
+  useEffect(() =>{
+    console.log("Recipe is ", userRecipes);
+  }, [userRecipes]);
 
   const [votedEntries, setVotedEntries] = useState<string[]>([])
 
@@ -175,7 +206,6 @@ export default function CompetitionDetailPage({
       const response = await fetch("http://localhost/Recipe/api/api.php", {
         method: "POST",
         headers: {
-          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
@@ -236,6 +266,30 @@ export default function CompetitionDetailPage({
     fetchEntries()
   }
 
+  const handleEndCompetition = async () => {
+    try {
+      const response = await fetch("http://localhost/Recipe/api/admin.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          action: "set_competition_winner",
+          competition_id: competitionId,
+        }).toString(),
+      })
+
+      if (response.ok) {
+        // Refresh competition data to show updated status
+        window.location.reload()
+      } else {
+        console.error("Failed to end competition")
+      }
+    } catch (error) {
+      console.error("Error ending competition:", error)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4 flex justify-center">
@@ -246,13 +300,24 @@ export default function CompetitionDetailPage({
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <Button variant="ghost" size="sm" asChild className="mb-6">
-        <Link href="/competitions">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Competitions
-        </Link>
-      </Button>
-
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" size="sm" asChild className="mb-6">
+          <Link href="/competitions">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Competitions
+          </Link>
+        </Button>
+        
+        {competition.status === "active" && (
+          <Button 
+            onClick={() => setShowEndCompetitionDialog(true)}
+            variant="destructive"
+          >
+            Mark competition as ended
+          </Button>
+        )}
+      </div>
+  
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card className="overflow-hidden hover:shadow-md transition-shadow">
@@ -278,77 +343,98 @@ export default function CompetitionDetailPage({
             </CardHeader>
             <CardContent>
               <p className="mb-4 whitespace-pre-line">{competition.description}</p>
-
+  
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span>{competition.entry_num} recipe entries</span>
                 </div>
               </div>
-
+  
               <div className="flex justify-end">
-                <Button onClick={() => setShowSubmissionForm(true)}>Submit Your Entry</Button>
+                {competition.status === "active" && (
+                  <Button onClick={() => setShowSubmissionForm(true)}>Submit Your Entry</Button>
+                )}
               </div>
             </CardContent>
           </Card>
-
+  
           <Tabs defaultValue="entries" className="mt-6">
             <TabsList className="w-full grid grid-cols-1">
               <TabsTrigger value="entries">Entries</TabsTrigger>
             </TabsList>
-
+  
             <TabsContent value="entries" className="mt-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Competition Entries</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {entries.length > 0 ? (
-                    <div className="space-y-4">
-                      {entries.map((entry) => (
-                        <div
-                          key={entry.entry_id}
-                          className="border rounded-lg p-4 hover:border-primary transition-colors"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                              <div>
-                                <div className="font-medium">{entry.title}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  by {entry.username} • {entry.submission_date}
-                                </div>
-                              </div>
+                {entries.length > 0 ? (
+                  <div className="space-y-4">
+                    {entries.map((entry) => (
+                      <div
+                        key={entry.entry_id}
+                        className="border rounded-lg p-4 hover:border-primary transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium flex items-center">
+                              {entry.title}
+                              {winner && winner.entry_id === entry.entry_id && (
+                                <Badge className="bg-yellow-400 text-black ml-2">
+                                  <Trophy className="h-3 w-3 mr-1" /> Winner
+                                </Badge>
+                              )}
                             </div>
-                            <div className="flex items-center gap-4">
-                              <Button variant="ghost" size="sm" onClick={() => handleVoteClick(entry.entry_id)}>
-                                <ThumbsUp
-                                  className={`mr-1 h-4 w-4 ${
-                                    userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
-                                      ? "fill-current text-primary"
-                                      : ""
-                                  }`}
-                                />
-                                {entry.number_of_votes}
-                              </Button>
+                            <div className="text-sm text-muted-foreground">
+                              by {entry.username} • {entry.submission_date}
                             </div>
                           </div>
-                          <div className="flex justify-end mt-2">
-                            <Button variant="ghost" size="sm">
-                              View Details
+                          <div className="flex items-center gap-4">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleVoteClick(entry.entry_id)}
+                              disabled={
+                                competition.status !== "active" || 
+                                userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                              }
+                              className={
+                                competition.status !== "active" || 
+                                userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                                  ? "opacity-50 bg-gray-100"
+                                  : ""
+                              }
+                            >
+                              <ThumbsUp
+                                className={`mr-1 h-4 w-4 ${
+                                  userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                                    ? "fill-current text-primary"
+                                    : ""
+                                }`}
+                              />
+                              {entry.number_of_votes}
                             </Button>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">No entries have been submitted yet.</div>
-                  )}
+                        <div className="flex justify-end mt-2">
+                          <Button variant="ghost" size="sm">
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">No entries have been submitted yet.</div>
+                )}
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
         </div>
-
+  
         <div>
           <Card className="mb-6 hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
@@ -359,7 +445,7 @@ export default function CompetitionDetailPage({
                 <div className="text-sm font-medium">Prize</div>
                 <div className="text-xl font-bold text-primary mt-1">RM{competition.prize}</div>
               </div>
-
+  
               <div>
                 <div className="text-sm font-medium">Timeline</div>
                 <div className="space-y-2 mt-2">
@@ -377,59 +463,80 @@ export default function CompetitionDetailPage({
                   </div>
                 </div>
               </div>
-
+  
               <Separator />
-
-              <div>
-                <div className="text-sm font-medium">Top Entries</div>
-                <div className="space-y-2 mt-2">
-                  {entries.length > 0 ? (
-                    entries
-                      .sort((a, b) => b.number_of_votes - a.number_of_votes)
-                      .slice(0, 3)
-                      .map((entry, index) => (
-                        <div
-                          key={entry.entry_id}
-                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/20 transition-colors"
-                        >
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 truncate">{entry.title}</div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleVoteClick(entry.entry_id)}
-                            disabled={userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)}
-                            className={
-                              userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
-                                ? "opacity-50 bg-gray-100"
-                                : ""
-                            }
-                          >
-                            <ThumbsUp
-                              className={`mr-1 h-4 w-4 ${
-                                userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
-                                  ? "fill-current text-primary"
-                                  : ""
-                              }`}
-                            />
-                            {entry.number_of_votes}
-                          </Button>
+  
+              {competition.status === "past" ? (
+                <div>
+                  <div className="text-sm font-medium">Competition Winner</div>
+                  <div className="space-y-2 mt-2">
+                    {winner ? (
+                      <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                          🏆
                         </div>
-                      ))
-                  ) : (
-                    <div className="text-center py-4 text-sm text-muted-foreground">No entries yet</div>
-                  )}
+                        <div className="flex-1 truncate">{winner.title}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {winner.number_of_votes} votes
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-sm text-muted-foreground">No winner declared</div>
+                    )}
+                  </div>
                 </div>
-              </div>
-
+              ) : (
+                <div>
+                  <div className="text-sm font-medium">Top Entries</div>
+                  <div className="space-y-2 mt-2">
+                    {entries.length > 0 ? (
+                      entries
+                        .sort((a, b) => b.number_of_votes - a.number_of_votes)
+                        .slice(0, 3)
+                        .map((entry, index) => (
+                          <div
+                            key={entry.entry_id}
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/20 transition-colors"
+                          >
+                            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 truncate">{entry.title}</div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleVoteClick(entry.entry_id)}
+                              disabled={userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)}
+                              className={
+                                userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                                  ? "opacity-50 bg-gray-100"
+                                  : ""
+                              }
+                            >
+                              <ThumbsUp
+                                className={`mr-1 h-4 w-4 ${
+                                  userVotedEntries.some((vote) => vote.entry_id === entry.entry_id)
+                                    ? "fill-current text-primary"
+                                    : ""
+                                }`}
+                              />
+                              {entry.number_of_votes}
+                            </Button>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="text-center py-4 text-sm text-muted-foreground">No entries yet</div>
+                    )}
+                  </div>
+                </div>
+              )}
+  
               <Separator />
             </CardContent>
           </Card>
         </div>
       </div>
-
+  
       <RecipeSubmissionForm
         open={showSubmissionForm}
         onOpenChange={setShowSubmissionForm}
@@ -446,6 +553,21 @@ export default function CompetitionDetailPage({
         }))}
         userId={user_id || "2"}
       />
+      <AlertDialog open={showEndCompetitionDialog} onOpenChange={setShowEndCompetitionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End Competition</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this competition as ended? This will determine the winner based on votes and
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleEndCompetition}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
