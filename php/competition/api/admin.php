@@ -15,14 +15,14 @@ $conn = $database->conn;
 
 $headers = getallheaders();
 
-$userID = $_REQUEST['userID'] ?? null;    //null first, check at end, maybe set error if really needed
-if (!isset($_SESSION['role'])) {
+if (!isset($_SESSION['user_id'])) {
   http_response_code(401);
-  echo json_encode(['message' => 'Unauthorized user']);
+  echo json_encode(['message' => 'user not authenticated']);
+  exit();
 }
 if ($_SESSION['role'] != 'admin') {
   http_response_code(401);
-  echo json_encode(['message' => 'Not admin user']);
+  echo json_encode(['message' => 'Not admin user, access denied']);
   exit();
 }
 
@@ -60,14 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   $start_date = $_POST['start_date'];
   $end_date = $_POST['end_date'];
   $voting_end_date = $_POST['voting_end_date'];
+  $prize = $_POST['prize'];
 
   $title = $conn->real_escape_string($title);
   $description = $conn->real_escape_string($description);
   $start_date = $conn->real_escape_string($start_date);
   $end_date = $conn->real_escape_string($end_date);
   $voting_end_date = $conn->real_escape_string($voting_end_date);
+  $prize = $conn->real_escape_string($prize);
 
-  $result = Competition::updateCompetition($competition_id, $title, $description, $start_date, $end_date, $voting_end_date, $database);
+  $result = Competition::updateCompetition($competition_id, $title, $description, $start_date, $end_date, $voting_end_date, $prize, $database);
   if ($result) {
     http_response_code(200);
     echo json_encode(['message' => 'Competition updated successfully']);

@@ -344,17 +344,24 @@ export default function CompetitionDetailPage({
             Back to Competitions
           </Link>
         </Button>
-        
-        {competition.status === "active" && admin &&(
-          <Button 
-            onClick={() => setShowEndCompetitionDialog(true)}
-            variant="destructive"
-          >
-            Mark competition as ended
-          </Button>
+
+        {competition.status === "active" && admin && (
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowEndCompetitionDialog(true)}
+              variant="destructive"
+            >
+              Edit competition
+            </Button>
+            <Button
+              onClick={() => setShowEndCompetitionDialog(true)}
+              variant="destructive"
+            >
+              Mark competition as ended
+            </Button>
+          </div>
         )}
       </div>
-  
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Card className="overflow-hidden hover:shadow-md transition-shadow">

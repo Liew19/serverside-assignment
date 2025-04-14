@@ -40,25 +40,70 @@ interface Competition {
   image?: string;
 }
 
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined' || !document.cookie) return null;
+
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()!.split(';').shift()!;
+  return null;
+}
+const user_id = getCookie('user_id'); 
+
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [admin, setAdmin] = useState(false);
 
   useEffect(() => {
-    const url = `http://localhost/server/php/competition/api/user.php?action=get_all_competitions`;
-    fetch(url, {
-      credentials: "include",
-      method: 'GET',  // Make sure you're sending the correct request method
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',  // Ensure the content type is set if needed
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Fetched competitions:", data);
-        setCompetitions(data.data);
-      })
-      .catch((error) => console.error('Error fetching competitions:', error));
-  }, []);
+    const fetchData = async () => {
+      try {
+        // 1. Fetch competitions
+        const compRes = await fetch(`http://localhost/server/php/competition/api/user.php?action=get_all_competitions`, {
+          credentials: "include",
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        });
+        const compData = await compRes.json();
+        console.log("Fetched competitions:", compData);
+        setCompetitions(compData.data);
+  
+        // 2. Check status
+        if (!user_id) {
+          console.warn("No user_id found in cookie or state.");
+          return;
+        }
+  
+        const statusRes = await fetch(`http://localhost/server/php/competition/api/user.php`, {
+          credentials: "include",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            action: "check_status",
+            user_id: user_id.toString()
+          }).toString(),
+        });
+  
+        const status = await statusRes.json();
+        console.log("status", status);
+  
+        if (status.status === true) {
+          setAdmin(status.admin === true);
+          console.log(status.admin ? "you are admin" : "you are not admin");
+        } else {
+          setAdmin(false);
+        }
+      } catch (error) {
+        console.error("Error in useEffect:", error);
+      }
+    };
+  
+    fetchData();
+  }, [user_id]);
+  
 
 
   return (
@@ -76,9 +121,11 @@ export default function CompetitionsPage() {
             Showcase your skills and win recognition
           </p>
         </div>
-        <Button asChild>
-          <Link href="/competitions/create">Create Competition</Link>
-        </Button>
+        {admin && (
+          <Button asChild>
+            <Link href="/competitions/create">Create Competition</Link>
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="active" className="mb-8"> 
@@ -140,15 +187,7 @@ export default function CompetitionsPage() {
 
 function CompetitionCard({ competition }: { competition: Competition }) {
   const router = useRouter();
-  function getCookie(name: string): string | null {
-    if (typeof document === 'undefined' || !document.cookie) return null;
   
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()!.split(';').shift()!;
-    return null;
-  }
-  const user_id = getCookie('user_id'); 
   
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">

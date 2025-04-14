@@ -104,10 +104,10 @@ class Competition
   }
 
   //update competition all details
-  public static function updateCompetition($id, $title, $description, $start_date, $end_date, $voting_end_date, $database)
+  public static function updateCompetition($id, $title, $description, $start_date, $end_date, $voting_end_date, $prize, $database)
   {
     $conn = $database->conn;
-    $sql = "UPDATE competitions SET title = '$title', description = '$description', start_date = '$start_date', end_date = '$end_date', voting_end_date = '$voting_end_date' WHERE competition_id = $id";
+    $sql = "UPDATE competitions SET title = '$title', description = '$description', start_date = '$start_date', end_date = '$end_date', prize='$prize', voting_end_date = '$voting_end_date' WHERE competition_id = $id";
     $result = $conn->query($sql);
     if (!$result) {
       die("Query error" . mysqli_error($conn));

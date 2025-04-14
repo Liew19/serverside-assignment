@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
   if ($user) {
     $_SESSION['user_id'] = $user['user_id'];
     $_SESSION['username'] = $user['username'];
-    $_SESSION['user'] = $user['username'];
+    $_SESSION['status'] = 'logged in';
     $_SESSION['role'] = $user['role'];
     http_response_code(200);
     echo json_encode([
