@@ -166,6 +166,7 @@ export default function CompetitionDetailPage({
             recipe_id: recipe.recipe_id
           }))
           setUserRecipes(formattedRecipe);
+          console.log("user recipe");
         }
 
         //fetch winner is past competition is used

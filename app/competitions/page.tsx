@@ -49,7 +49,6 @@ export default function CompetitionsPage() {
       credentials: "include",
       method: 'GET',  // Make sure you're sending the correct request method
       headers: {
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIzIiwidXNlcm5hbWUiOiJPR0MiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NDM2Njk4MTgsImV4cCI6MTc0MzY3MzQxOH0=.bA8E4AoRTloJN5SK72CBCAOnKQk7pYF+U3gxdfuufF8=`,
         'Content-Type': 'application/x-www-form-urlencoded',  // Ensure the content type is set if needed
       },
     })

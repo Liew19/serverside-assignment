@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS votes (
     user_id INT NOT NULL,
     entry_id INT NOT NULL,
     vote_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    voted TINYINT(1) NOT NULL DEFAULT 1,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (entry_id) REFERENCES competition_entries(entry_id),
     UNIQUE KEY unique_vote (entry_id, user_id)
@@ -74,56 +73,57 @@ INSERT INTO users (username, email, password, role) VALUES
 ('gordon_r', 'gordon@cuisine.net', '$2a$12$nVOK3v6cA4WtQ9P8dEP93.tbeUOJHDiIVwCxmCFUcogOxPuM00jWW', 'user'); -- hashed 'cheflife555'
 
 -- Insert sample recipes
-INSERT INTO recipes (user_id, title, description, ingredients, instructions, prep_time, cook_time, servings, image_url) VALUES
-(1, 'Classic Spaghetti Carbonara', 'A traditional Italian pasta dish from Rome', 
-'Spaghetti, Eggs, Pecorino Romano, Guanciale, Black Pepper', 
-'1. Cook pasta\n2. Fry guanciale\n3. Mix eggs and cheese\n4. Combine all ingredients', 
-15, 10, 4, 'https://example.com/images/carbonara.jpg'),
+INSERT INTO recipes (
+  user_id, title, description, ingredients, instructions, prep_time, cook_time, servings, image_url
+) VALUES
+(1, 'Spaghetti Carbonara', 'Classic creamy Italian pasta dish.', 'Spaghetti, Eggs, Parmesan, Bacon, Pepper', 'Cook pasta. Fry bacon. Mix eggs and cheese. Combine all.', 10, 15, 2, 'https://example.com/images/carbonara.jpg'),
 
-(2, 'Avocado Toast', 'Simple and delicious breakfast', 
-'Bread, Avocado, Salt, Pepper, Red Pepper Flakes', 
-'1. Toast bread\n2. Mash avocado\n3. Spread on toast\n4. Season', 
-5, 2, 1, 'https://example.com/images/avocado_toast.jpg'),
+(2, 'Chicken Tikka Masala', 'Flavorful Indian curry with grilled chicken.', 'Chicken, Yogurt, Tomato, Onion, Spices', 'Marinate chicken. Grill. Cook sauce. Combine.', 20, 30, 4, 'https://example.com/images/tikka.jpg'),
 
-(3, 'Beef Wellington', 'Impressive centerpiece for special occasions', 
-'Beef Tenderloin, Mushrooms, Puff Pastry, Prosciutto, Dijon Mustard', 
-'1. Sear beef\n2. Prepare mushroom duxelles\n3. Wrap in prosciutto\n4. Wrap in pastry\n5. Bake', 
-45, 35, 6, 'https://example.com/images/beef_wellington.jpg'),
+(3, 'Beef Tacos', 'Spicy Mexican beef tacos with toppings.', 'Beef, Taco shells, Lettuce, Cheese, Salsa', 'Cook beef. Prep toppings. Assemble tacos.', 15, 10, 3, 'https://example.com/images/tacos.jpg'),
 
-(4, 'Thai Green Curry', 'Fragrant and spicy Thai favorite', 
-'Chicken, Green Curry Paste, Coconut Milk, Bamboo Shoots, Thai Basil', 
-'1. Fry curry paste\n2. Add coconut milk\n3. Cook chicken\n4. Add vegetables\n5. Garnish with basil', 
-20, 25, 4, 'https://example.com/images/thai_curry.jpg'),
+(4, 'Veggie Stir Fry', 'Quick and healthy stir-fried vegetables.', 'Broccoli, Carrot, Bell pepper, Soy sauce, Garlic', 'Chop veggies. Stir fry with sauce.', 10, 10, 2, 'https://example.com/images/stirfry.jpg'),
 
-(5, 'Chocolate Soufflé', 'Impressive and delicious dessert', 
-'Dark Chocolate, Eggs, Butter, Sugar, Flour', 
-'1. Melt chocolate with butter\n2. Separate eggs\n3. Whip whites\n4. Fold together\n5. Bake until risen', 
-30, 15, 2, 'https://example.com/images/souffle.jpg'),
+(5, 'Salmon Teriyaki', 'Japanese-style salmon glazed with teriyaki sauce.', 'Salmon, Teriyaki sauce, Rice, Scallions', 'Sear salmon. Add sauce. Serve with rice.', 10, 15, 2, 'https://example.com/images/salmon.jpg'),
 
-(1, 'BBQ Pulled Pork', 'Slow-cooked Southern classic', 
-'Pork Shoulder, BBQ Rub, Apple Cider Vinegar, BBQ Sauce', 
-'1. Rub pork with spices\n2. Slow cook for 8 hours\n3. Shred\n4. Mix with sauce', 
-30, 480, 8, 'https://example.com/images/pulled_pork.jpg'),
+(6, 'Pancakes', 'Fluffy breakfast pancakes with syrup.', 'Flour, Eggs, Milk, Baking powder, Syrup', 'Mix batter. Cook on skillet. Serve with syrup.', 10, 10, 4, 'https://example.com/images/pancakes.jpg'),
 
-(2, 'Vegetable Lasagna', 'Hearty vegetarian pasta dish', 
-'Lasagna Noodles, Ricotta, Zucchini, Spinach, Tomato Sauce, Mozzarella', 
-'1. Sauté vegetables\n2. Layer ingredients\n3. Bake until bubbly', 
-40, 50, 8, 'https://example.com/images/veg_lasagna.jpg');
+(1, 'Margherita Pizza', 'Simple Italian pizza with tomato, mozzarella, and basil.', 'Pizza dough, Tomato sauce, Mozzarella, Basil, Olive oil', 'Spread sauce on dough. Add cheese and basil. Bake.', 20, 15, 2, 'https://example.com/images/pizza.jpg'),
+
+(2, 'Butter Chicken', 'Creamy tomato-based Indian chicken dish.', 'Chicken, Butter, Tomato, Cream, Spices', 'Cook chicken. Prepare sauce. Simmer together.', 25, 30, 4, 'https://example.com/images/butterchicken.jpg'),
+
+(3, 'Chili Con Carne', 'Hearty beef and bean chili.', 'Ground beef, Beans, Tomato, Onion, Chili powder', 'Brown beef. Add ingredients. Simmer until thick.', 15, 40, 6, 'https://example.com/images/chili.jpg'),
+
+(4, 'Pad Thai', 'Classic Thai noodle stir-fry with tamarind and peanuts.', 'Rice noodles, Egg, Tofu, Tamarind paste, Peanuts', 'Soak noodles. Stir fry all ingredients with sauce.', 15, 10, 2, 'https://example.com/images/padthai.jpg'),
+
+(5, 'Shrimp Scampi', 'Garlicky shrimp pasta with lemon and butter.', 'Shrimp, Garlic, Butter, Lemon, Spaghetti', 'Cook pasta. Sauté shrimp with garlic and butter. Combine.', 10, 10, 2, 'https://example.com/images/scampi.jpg'),
+
+(6, 'French Toast', 'Golden slices of bread soaked in egg and fried.', 'Bread, Eggs, Milk, Cinnamon, Syrup', 'Dip bread in egg mix. Fry both sides. Serve warm.', 10, 10, 3, 'https://example.com/images/frenchtoast.jpg');
 
 -- Insert sample competitions
 INSERT INTO competitions (title, description, start_date, end_date, voting_end_date, status, prize) VALUES
 ('Summer BBQ Showdown', 'Show us your best barbecue recipes!', '2024-06-01', '2024-06-15', '2024-06-22', 'upcoming', 500),
 ('Comfort Food Classics', 'Share your favorite comfort food recipes', '2024-03-10', '2024-04-15', '2024-04-15', 'active', 300),
 ('Holiday Cookie Contest', 'Your best holiday cookie recipes', '2024-12-01', '2024-12-15', '2024-12-22', 'upcoming', 400),
-('Vegan Challenge', 'Create amazing plant-based dishes', '2024-04-01', '2024-04-14', '2024-04-21', 'active', 350);
+('Vegan Challenge', 'Create amazing plant-based dishes', '2024-04-01', '2024-04-14', '2024-04-21', 'active', 350),
+('Healthy Meal Masterpieces', 'Show us your healthiest meal creations!', '2025-04-15', '2025-04-30', '2025-05-05', 'active', 450),
+('World Pizza Championship', 'Submit your best pizza recipes and compete for the crown!', '2025-05-01', '2025-05-10', '2025-05-15', 'active', 600),
+('Spicy Food Battle', 'Heat up the competition with your spiciest dishes!', '2025-05-20', '2025-06-05', '2025-06-10', 'active', 350),
+('Gourmet Desserts', 'Delight us with your top-tier dessert recipes!', '2025-06-01', '2025-06-15', '2025-06-22', 'active', 500),
+('Baking Extravaganza', 'Bake the most delicious cake or pastry and win!', '2025-07-01', '2025-07-10', '2025-07-15', 'active', 400),
+('Street Food Fiesta', 'Bring your best street food recipes to the table!', '2025-07-05', '2025-07-20', '2025-07-25', 'active', 450),
+('Quick & Easy Meals', 'Fast recipes for busy weekdays!', '2025-04-10', '2025-04-20', '2025-04-25', 'active', 300),
+('Christmas Feast Cook-off', 'Share your best Christmas meal recipes!', '2025-12-01', '2025-12-15', '2025-12-20', 'upcoming', 400),
+('Summer Smoothie Challenge', 'Create the best smoothie recipe for the summer!', '2025-06-01', '2025-06-10', '2025-06-15', 'upcoming', 250),
+('Winter Soup Showcase', 'Warm us up with your best winter soups and stews!', '2025-11-01', '2025-11-10', '2025-11-15', 'upcoming', 300);
 
 -- Insert sample competition entries
 INSERT INTO competition_entries (competition_id, recipe_id, submission_date) VALUES
-(2, 1, '2024-03-15 14:30:00'), -- Carbonara in Comfort Food contest
-(2, 3, '2024-03-16 09:45:00'), -- Beef Wellington in Comfort Food contest
-(2, 5, '2024-03-17 16:20:00'), -- Chocolate Soufflé in Comfort Food contest
-(4, 2, '2024-04-02 10:15:00'), -- Avocado Toast in Vegan Challenge
-(4, 7, '2024-04-03 11:30:00'); -- Vegetable Lasagna in Vegan Challenge
+(2, 1), -- Carbonara in Comfort Food contest
+(2, 3), -- Beef Wellington in Comfort Food contest
+(2, 5), -- Chocolate Soufflé in Comfort Food contest
+(4, 2), -- Avocado Toast in Vegan Challenge
+(4, 7); -- Vegetable Lasagna in Vegan Challenge
 
 
 -- Insert sample votes

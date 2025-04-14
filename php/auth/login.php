@@ -8,7 +8,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, Cache-Control
 require_once "../users/User.php";
 
 session_start();
-$database = new Database("localhost", "root", "password", "database_recipe");
+$database = new Database("localhost", "root", "password");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'login') {
   $email = $_POST['email'];

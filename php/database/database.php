@@ -7,12 +7,12 @@ class Database
   private $password;
   public $conn;
 
-  public function __construct($host, $username, $password, $dbName)
+  public function __construct($host, $username, $password)
   {
     $this->host = $host;
     $this->username = $username;
     $this->password = $password;
-    $this->dbName = $dbName;
+    $this->dbName = "database_test1";
     $this->connect(); //automatically connect when database object is created
   }
 
