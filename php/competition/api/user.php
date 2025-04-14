@@ -169,6 +169,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   $competition_id = $_POST['competition_id'];
   $recipe_id = $_POST['recipe_id'];
   $checkRepeatedSubmission = Competition::checkRecipeSubmission($recipe_id, $competition_id, $database);
+  if ($checkRepeatedSubmission == 'ineligible') {
+    http_response_code(500);
+    echo json_encode(['message' => 'You are ineligible to submit this recipe']);
+    exit();
+  }
   if ($checkRepeatedSubmission) {
     http_response_code(500);
     echo json_encode(['message' => 'Repeated submission']);

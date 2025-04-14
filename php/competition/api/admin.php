@@ -15,16 +15,16 @@ $conn = $database->conn;
 
 $headers = getallheaders();
 
-if (!isset($_SESSION['user_id'])) {
-  http_response_code(401);
-  echo json_encode(['message' => 'user not authenticated']);
-  exit();
-}
-if ($_SESSION['role'] != 'admin') {
-  http_response_code(401);
-  echo json_encode(['message' => 'Not admin user, access denied']);
-  exit();
-}
+// if (!isset($_SESSION['user_id'])) {
+//   http_response_code(401);
+//   echo json_encode(['message' => 'user not authenticated']);
+//   exit();
+// }
+// if ($_SESSION['role'] != 'admin') {
+//   http_response_code(401);
+//   echo json_encode(['message' => 'Not admin user, access denied']);
+//   exit();
+// }
 
 //Create Competition by admin 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_competition') {
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   $result = Competition::updateCompetition($competition_id, $title, $description, $start_date, $end_date, $voting_end_date, $prize, $database);
   if ($result) {
     http_response_code(200);
-    echo json_encode(['message' => 'Competition updated successfully']);
+    echo json_encode(['status' => true]);
   } else {
     http_response_code(500);
     echo json_encode(['message' => 'Failed to update competition']);
@@ -104,18 +104,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   }
 }
 
-//delete competition by admin
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_competition') {
-  $competition_id = $_POST['competition_id'];
-  $result = Competition::deleteCompetition($competition_id, $database);
-  if ($result) {
-    http_response_code(200);
-    echo json_encode(['message' => 'Competition deleted successfully']);
-  } else {
-    http_response_code(500);
-    echo json_encode(['message' => 'Failed to delete competition']);
-  }
-}
+// //delete competition by admin
+// if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_competition') {
+//   $competition_id = $_POST['competition_id'];
+//   $result = Competition::deleteCompetition($competition_id, $database);
+//   if ($result) {
+//     http_response_code(200);
+//     echo json_encode(['message' => 'Competition deleted successfully']);
+//   } else {
+//     http_response_code(500);
+//     echo json_encode(['message' => 'Failed to delete competition']);
+//   }
+// }
 
 //delete competition entry by admin
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_competition_entry') {
@@ -125,9 +125,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   if ($result) {
     http_response_code(200);
     echo json_encode([
-      'message' => 'Competition entry deleted successfully',
-      'deleted entry_id' => $entry_id,
-      'deleted reason' => $delete_desc
+      'status' => true
+    ]);
+  } else {
+    http_response_code(400);
+    echo json_encode([
+      'status' => false
     ]);
   }
 }

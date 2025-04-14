@@ -89,10 +89,7 @@ export default function RecipeSubmissionForm({
         setFeedbackMessage("Your recipe has been submitted to the competition.")
         setIsSuccess(true)
         onSubmitSuccess()
-        // Optionally, you could delay closing the dialog to let the user see the message.
-        setTimeout(() => {
-          onOpenChange(false)
-        }, 1500)
+        window.location.reload()
       } else {
         setFeedbackMessage(data.message)  //show repeated submission
         setIsSuccess(false)

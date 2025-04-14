@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import RecipeSubmissionForm from "@/components/recipe-submission-form"
+import EditCompetitionDialog from "@/components/edit-competition-dialog"
+import { Textarea } from "@/components/ui/textarea"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Trash2 } from "lucide-react"
 
 // In Next.js App Router, page props contain the route parameters
 export default function CompetitionDetailPage({
@@ -83,6 +86,10 @@ export default function CompetitionDetailPage({
   const [winner, setWinner] = useState<{entry_id: string, title: string, number_of_votes: string} | null>(null);
   const [showEndCompetitionDialog, setShowEndCompetitionDialog] = useState(false)
   const [admin, setAdmin] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null)
+  const [deleteReason, setDeleteReason] = useState("")
 
   useEffect(() => {
     if (!user_id || !competitionId) return;
@@ -229,10 +236,6 @@ export default function CompetitionDetailPage({
         }
   }
 
-  useEffect(() =>{
-    console.log("Recipe is ", userRecipes);
-  }, [userRecipes]);
-
   const [votedEntries, setVotedEntries] = useState<string[]>([])
 
   const handleVoteClick = async (entryId: string, userId: string) => {
@@ -327,6 +330,37 @@ export default function CompetitionDetailPage({
     }
   }
 
+  const handleDeleteEntry = async () => {
+    if (!entryToDelete) return
+    
+    try {
+      const response = await fetch("http://localhost/server/php/competition/api/admin.php", {
+        credentials: "include",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          action: "delete_competition_entry",
+          entry_id: entryToDelete,
+          delete_desc: deleteReason
+        }).toString(),
+      })
+  
+      if (response.ok) {
+        // Remove the deleted entry from the entries array
+        setEntries(entries.filter(entry => entry.entry_id !== entryToDelete))
+        setShowDeleteDialog(false)
+        setDeleteReason("")
+        setEntryToDelete(null)
+      } else {
+        console.error("Failed to delete entry")
+      }
+    } catch (error) {
+      console.error("Error deleting entry:", error)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4 flex justify-center">
@@ -348,10 +382,10 @@ export default function CompetitionDetailPage({
         {competition.status === "active" && admin && (
           <div className="flex gap-2">
             <Button
-              onClick={() => setShowEndCompetitionDialog(true)}
-              variant="destructive"
+              onClick={() => setShowEditDialog(true)}
+              variant="outline"
             >
-              Edit competition
+              Edit Competition
             </Button>
             <Button
               onClick={() => setShowEndCompetitionDialog(true)}
@@ -417,25 +451,39 @@ export default function CompetitionDetailPage({
                 {entries.length > 0 ? (
                   <div className="space-y-4">
                     {entries.map((entry) => (
-                      <div
-                        key={entry.entry_id}
-                        className="border rounded-lg p-4 hover:border-primary transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium flex items-center">
-                              {entry.title}
-                              {winner && winner.entry_id === entry.entry_id && (
-                                <Badge className="bg-yellow-400 text-black ml-2">
-                                  <Trophy className="h-3 w-3 mr-1" /> Winner
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              by {entry.username} • {entry.submission_date}
-                            </div>
+                    <div
+                      key={entry.entry_id}
+                      className="border rounded-lg p-4 hover:border-primary transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-medium flex items-center">
+                            {entry.title}
+                            {winner && winner.entry_id === entry.entry_id && (
+                              <Badge className="bg-yellow-400 text-black ml-2">
+                                <Trophy className="h-3 w-3 mr-1" /> Winner
+                              </Badge>
+                            )}
                           </div>
-                          <div className="flex items-center gap-4">
+                          <div className="text-sm text-muted-foreground">
+                            by {entry.username} • {entry.submission_date}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          {admin && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                              onClick={() => {
+                                setEntryToDelete(entry.entry_id)
+                                setShowDeleteDialog(true)
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -462,15 +510,15 @@ export default function CompetitionDetailPage({
                             />
                             {entry.number_of_votes}
                           </Button>
-                          </div>
-                        </div>
-                        <div className="flex justify-end mt-2">
-                          <Button variant="ghost" size="sm">
-                            View Details
-                          </Button>
                         </div>
                       </div>
-                    ))}
+                      <div className="flex justify-end mt-2">
+                        <Button variant="ghost" size="sm">
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">No entries have been submitted yet.</div>
@@ -591,6 +639,7 @@ export default function CompetitionDetailPage({
           setSubmissionCount(prev => prev + 1)
           // Also, you can call your existing function to refetch the entries if needed.
           handleEntrySubmitted() 
+          window.location.reload()
         }}
         recipes={userRecipes.map(recipe => ({
           recipe_id: recipe.recipe_id.toString(), // Use the actual recipe_id from your data
@@ -610,6 +659,48 @@ export default function CompetitionDetailPage({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleEndCompetition}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <EditCompetitionDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        competitionId={competitionId}
+      />
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Entry</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this entry? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <label htmlFor="delete-reason" className="block text-sm font-medium mb-2">
+              Reason for deletion:
+            </label>
+            <Textarea
+              id="delete-reason"
+              placeholder="Please provide a reason for deleting this entry"
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteReason("")
+              setEntryToDelete(null)
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteEntry}
+              disabled={!deleteReason.trim()}
+              className={!deleteReason.trim() ? "opacity-50 cursor-not-allowed" : ""}
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

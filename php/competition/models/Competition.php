@@ -131,10 +131,14 @@ class Competition
   public static function checkRecipeSubmission($recipe_id, $competition_id, $database)
   {
     $conn = $database->conn;
-    $sql = "SELECT entry_id FROM competition_entries WHERE recipe_id = $recipe_id AND competition_id = $competition_id";
+    $sql = "SELECT entry_id, is_deleted FROM competition_entries WHERE recipe_id = $recipe_id AND competition_id = $competition_id";
     $result = $conn->query($sql);
     if (mysqli_num_rows($result) > 0) {
-      return true;
+      $result = mysqli_fetch_assoc($result);
+      if ($result['is_deleted'] == 1) {
+        return "ineligible";  //notify user entry has been deleted before, so cannot resubmit
+      } else
+        return true;
     }
   }
   public static function enterRecipe($competition_id, $recipe_id, $database)
@@ -145,6 +149,8 @@ class Competition
     if (!$competition || $competition['status'] == 0) {
       return false;   //no competition found or not active
     }
+
+
 
     $sql = "INSERT INTO competition_entries (competition_id, recipe_id) VALUES ($competition_id, $recipe_id)";
     $result = $conn->query($sql);
