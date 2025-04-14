@@ -1,61 +1,83 @@
 <?php
-require_once '../database/database.php';
 class User
 {
-  public static function register($username, $email, $password, $database)
+  public static function register($username, $email, $password, $conn)
   {
     $password = password_hash($password, PASSWORD_DEFAULT); //encruypt usng bcrypt in practical
-    $query = 'SELECT user_id FROM users where email="$email"';
-    $duplicatedEmail = $database->query($query);
-    if (mysqli_num_rows($duplicatedEmail) > 0) {
+    $query = 'SELECT user_id FROM users where email=?';
+    $sql = $conn->prepare($query);
+    if ($sql === false) {
+      die("Error preparing query: " . $conn->error);
+    }
+    $sql->bind_param("s", $email);
+    $sql->execute();
+    $duplicatedEmail = $sql->get_result();
+    if ($duplicatedEmail->num_rows > 0) {
       return false;
     }
 
-    $sql = "INSERT INTO users (username, email, password, role) VALUES ('$username', '$email', '$password', 'user')";
-    $result = $database->query($sql);
-    if (!$result) {
-      die("Query Error:" . mysqli_error($database->conn));
+    $sql = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')";
+    $stmt = $conn->prepare($sql);
+    if ($stmt === false) {
+      die("Error preparing query: " . $conn->error);
     }
-    return true;    //return user id
+    $stmt->bind_param("sss", $username, $email, $password);
+    if (!$stmt->execute()) {
+      die("Query Error:" . mysqli_error($conn));
+    }
+    return true;
   }
 
-  public static function login($email, $password, $database)
+  public static function login($email, $password, $conn)
   {
-    $sql = "SELECT user_id, username, email, role, password FROM users WHERE email = '$email'";
-    $result = $database->query($sql);
-    if (!$result) {
-      die("Query Error:" . mysqli_error($database->conn));
+    $sql = "SELECT user_id, username, email, role, password FROM users WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $email);
+    if (!$stmt) {
+      die("Prepare error" . $conn->error);
     }
-    if (mysqli_num_rows($result) == 0) {
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows == 0) {
       return false;   //if no user found return false
     }
-    $user = mysqli_fetch_assoc($result);
+    $user = $result->fetch_assoc();
 
     if (password_verify($password, $user["password"])) {
-      unset($user['password']);
+      unset($user['password']);   //remove the password part then return to user
       return $user;
     }
     return false;
   }
 
-  public static function getAllRecipes($user_id, $database)
+  //return all recipe of user
+  public static function getAllRecipes($user_id, $conn)
   {
-    $sql = "SELECT recipe_id, title FROM recipes WHERE user_id = $user_id";
-    $result = $database->query($sql);
-    if (!$result) {
-      die("Query Error:" . mysqli_error($database->conn));
+    $sql = "SELECT recipe_id, title FROM recipes WHERE user_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    if (!$stmt) {
+      die("Prepare error" . $conn->error);
     }
-    if (mysqli_num_rows($result) == 0) {
+    $result = $stmt->get_result();
+    if (!$result) {
+      die("Query Error:" . mysqli_error($conn));
+    }
+    if ($result->num_rows == 0) {
       return false;   //if no user found return false
     }
-    return $database->fetchAll($result);
+    return $result->fetch_assoc();
   }
 
-  public static function checkRole($user_id, $database)
+  public static function checkRole($user_id, $conn)
   {
-    $sql = "SELECT role from Users WHERE user_id = '$user_id'";
-    $result = $database->query($sql);
-    $result = mysqli_fetch_assoc($result);
+    $sql = "SELECT role from Users WHERE user_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $result = $result->fetch_assoc();
     return $result['role'] === 'admin';
   }
 }

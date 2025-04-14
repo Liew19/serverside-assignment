@@ -167,15 +167,24 @@ export default function CompetitionDetailPage({
           },
         })
         const recipeData = await checkUserRecipeResponse.json();
-        if(recipeData.data){
-          const formattedRecipe = recipeData.data.map((recipe: any) => ({
-            title: recipe.title,
-            recipe_id: recipe.recipe_id
-          }))
-          setUserRecipes(formattedRecipe);
-          console.log("user recipe");
+        console.log("user recipe", recipeData);
+        if (recipeData && recipeData.status === "success" && Array.isArray(recipeData.data)) {
+          setUserRecipes(recipeData.data.map((recipe: any) => ({
+            recipe_id: recipe.recipe_id,
+            title: recipe.title
+          })));
+        } else if (recipeData && recipeData.data && !Array.isArray(recipeData.data)) {
+          // Handle case where data might be a single object instead of array
+          setUserRecipes([{
+            recipe_id: recipeData.data.recipe_id,
+            title: recipeData.data.title
+          }]);
+        } else {
+          console.log("No recipes found or unexpected data structure", recipeData);
+          setUserRecipes([]);
         }
-
+        
+        console.log("competition data", competitionData);
         //fetch winner is past competition is used
         if (competitionData.data && competitionData.data.status === "past") {
           const winnerUrl = `http://localhost/server/php/competition/api/user.php?action=get_winner&competition_id=${competitionId}`
@@ -187,6 +196,7 @@ export default function CompetitionDetailPage({
             },
           })
           const winnerData = await winnerResponse.json()
+          console.log("winner", winnerData);
           if (winnerData.data) {
             console.log(winnerData)
             const formattedWinner = winnerData.data.map((win: any) =>({
@@ -320,7 +330,6 @@ export default function CompetitionDetailPage({
       })
 
       if (response.ok) {
-        // Refresh competition data to show updated status
         window.location.reload()
       } else {
         console.error("Failed to end competition")
@@ -639,7 +648,7 @@ export default function CompetitionDetailPage({
           setSubmissionCount(prev => prev + 1)
           // Also, you can call your existing function to refetch the entries if needed.
           handleEntrySubmitted() 
-          window.location.reload()
+          window.location.href = window.location.href;
         }}
         recipes={userRecipes.map(recipe => ({
           recipe_id: recipe.recipe_id.toString(), // Use the actual recipe_id from your data
