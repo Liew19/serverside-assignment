@@ -38,6 +38,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RecipeDetailPage({
   params,
@@ -45,6 +47,7 @@ export default function RecipeDetailPage({
   params: { id: string };
 }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -182,53 +185,44 @@ export default function RecipeDetailPage({
         }
       );
 
-      // Try to parse the response as JSON, but handle the case where it's not valid JSON
-      let data;
-      try {
-        const text = await response.text();
-        console.log("Delete response text:", text);
-        if (text) {
-          data = JSON.parse(text);
-          console.log("Delete response parsed:", data);
-        }
-      } catch (parseError) {
-        console.error("Error parsing delete response:", parseError);
-      }
-
       if (response.ok) {
         // Close the dialog first
         setIsDeleteDialogOpen(false);
-        // Then navigate
-        router.replace("/recipes");
+
+        // Show success toast
+        toast({
+          title: "Recipe Deleted",
+          description: "The recipe has been successfully deleted.",
+        });
+
+        // Navigate back to recipes page
+        router.push("/recipes");
       } else {
-        // Check if error contains foreign key constraint message
-        if (
-          data &&
-          data.error &&
-          data.error.includes("foreign key constraint fails")
-        ) {
-          let errorMessage = "Cannot delete this recipe because it is:";
-          if (data.error.includes("favorite_recipes")) {
-            errorMessage += "\n- In someone's favorites";
-          }
-          if (data.error.includes("competition_entries")) {
-            errorMessage += "\n- Used in a competition";
-          }
-          alert(
-            errorMessage + "\n\nPlease remove these references before deleting."
-          );
-        } else {
-          alert(
-            "Failed to delete recipe: " +
-              (data && data.error ? data.error : "Unknown error")
-          );
+        // Try to parse the error message
+        let errorMessage = "Failed to delete recipe";
+        try {
+          const text = await response.text();
+          const data = JSON.parse(text);
+          errorMessage = data.error || data.message || errorMessage;
+        } catch (parseError) {
+          console.error("Error parsing delete response:", parseError);
         }
-        setIsDeleteDialogOpen(false);
+
+        // Show error toast
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error deleting recipe:", error);
-      alert("Error occurred while deleting recipe");
-      setIsDeleteDialogOpen(false);
+      // Show error toast for network/unexpected errors
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the recipe.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -361,6 +355,7 @@ export default function RecipeDetailPage({
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-5xl">
+      <Toaster />
       <Button variant="ghost" className="mb-6" asChild>
         <Link href="/recipes">
           <ArrowLeft className="mr-2 h-4 w-4" />

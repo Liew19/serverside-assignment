@@ -1,23 +1,6 @@
 <?php
 require_once '../models/Recipe.php';
-require_once '../../database/database.php';
 require_once '../../users/User.php';
-
-// Turn off PHP error display - we'll handle errors ourselves
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-
-// Set up error handler to return JSON instead of HTML
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    http_response_code(500);
-    echo json_encode([
-        'error' => true,
-        'message' => $errstr,
-        'file' => $errfile,
-        'line' => $errline
-    ]);
-    exit;
-});
 
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: http://localhost:3000");
@@ -32,17 +15,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 session_start();
-$database = new Database("localhost", "root", "");
-if (!$database->conn) {
+$conn = new mysqli("localhost", "root", "", "recipe_management");
+if ($conn->connect_error) {
     http_response_code(500);
-    echo json_encode(['message' => 'Failed to connect to database']);
+    echo json_encode(['message' => 'Failed to connect to database: ' . $conn->connect_error]);
     exit;
 }
 
 // Get all recipes with optional limit
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['action'])) {
     $limit = isset($_GET['limit']) ? intval($_GET['limit']) : null;
-    $result = Recipe::getAllRecipes($database, $limit);
+    $result = Recipe::getAllRecipes($conn, $limit);
     if ($result) {
         http_response_code(200);
         echo json_encode($result);
@@ -55,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['action'])) {
 // Get recipe by ID
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     $id = $_GET['id'];
-    $result = Recipe::getRecipeById($id, $database);
+    $result = Recipe::getRecipeById($id, $conn);
     if ($result) {
         http_response_code(200);
         echo json_encode($result);
@@ -87,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'image_url' => $_POST['image_url'] ?? null
     ];
 
-    $result = Recipe::createRecipe($recipeData, $database);
+    $result = Recipe::createRecipe($recipeData, $conn);
     if ($result) {
         http_response_code(201);
         echo json_encode(['message' => 'Recipe created successfully', 'recipe_id' => $result]);
@@ -103,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT' && isset($_GET['id'])) {
     $data = json_decode(file_get_contents('php://input'), true);
     $favourite = $data['favourite'];
 
-    $result = Recipe::updateFavoriteStatus($recipe_id, $favourite, $database);
+    $result = Recipe::updateFavoriteStatus($recipe_id, $favourite, $conn);
     if ($result) {
         http_response_code(200);
         echo json_encode(['message' => 'Recipe updated successfully']);
@@ -121,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
         exit;
     }
 
-    $result = Recipe::getFavoriteRecipes($_SESSION['user_id'], $database);
+    $result = Recipe::getFavoriteRecipes($_SESSION['user_id'], $conn);
     if ($result) {
         http_response_code(200);
         echo json_encode($result);
@@ -139,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
         exit;
     }
 
-    $result = Recipe::getRecentlyViewed($_SESSION['user_id'], $database);
+    $result = Recipe::getRecentlyViewed($_SESSION['user_id'], $conn);
     if ($result) {
         http_response_code(200);
         echo json_encode($result);
@@ -158,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     $recipe_id = $_POST['recipe_id'];
-    $result = Recipe::addToRecentlyViewed($_SESSION['user_id'], $recipe_id, $database);
+    $result = Recipe::addToRecentlyViewed($_SESSION['user_id'], $recipe_id, $conn);
     if ($result) {
         http_response_code(200);
         echo json_encode(['message' => 'Added to recently viewed']);

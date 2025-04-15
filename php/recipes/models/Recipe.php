@@ -1,13 +1,14 @@
 <?php
-require_once __DIR__ . '/../../database/Database.php';
 
 class Recipe {
     private $conn;
     private $table = 'recipes';
 
     public function __construct() {
-        $database = new Database("localhost", "root", "");
-        $this->conn = $database->connect();
+        $this->conn = new mysqli("localhost", "root", "", "recipe_management");
+        if ($this->conn->connect_error) {
+            die("Connection failed: " . $this->conn->connect_error);
+        }
     }
 
     public function getAllRecipesWithPagination($page = 1, $limit = 10, $search = '') {
@@ -179,21 +180,8 @@ class Recipe {
     }
 
     // Get all recipes with optional limit
-    public static function getAllRecipes($database, $limit = null) {
-        $conn = $database->conn;
-
-        // Check if the is_deleted column exists in the recipes table
-        $checkColumnSql = "SHOW COLUMNS FROM recipes LIKE 'is_deleted'";
-        $columnResult = $conn->query($checkColumnSql);
-
-        if ($columnResult && $columnResult->num_rows > 0) {
-            // Column exists, use it in the query
-            $sql = "SELECT * FROM recipes WHERE is_deleted = 0";
-        } else {
-            // Column doesn't exist, skip the condition
-            $sql = "SELECT * FROM recipes";
-        }
-
+    public static function getAllRecipes($conn, $limit = null) {
+        $sql = "SELECT * FROM recipes WHERE is_deleted = 0";
         if ($limit) {
             $sql .= " LIMIT " . intval($limit);
         }
@@ -204,7 +192,10 @@ class Recipe {
             return false;
         }
 
-        $recipes = $database->fetchAll($result);
+        $recipes = [];
+        while ($row = $result->fetch_assoc()) {
+            $recipes[] = $row;
+        }
 
         // Check if user is logged in and favorite_recipes table exists
         if (isset($_SESSION['user_id'])) {
@@ -237,21 +228,8 @@ class Recipe {
     }
 
     // Get recipe by ID
-    public static function getRecipeById($id, $database) {
-        $conn = $database->conn;
-
-        // Check if the is_deleted column exists in the recipes table
-        $checkColumnSql = "SHOW COLUMNS FROM recipes LIKE 'is_deleted'";
-        $columnResult = $conn->query($checkColumnSql);
-
-        if ($columnResult && $columnResult->num_rows > 0) {
-            // Column exists, use it in the query
-            $sql = "SELECT * FROM recipes WHERE recipe_id = ? AND is_deleted = 0";
-        } else {
-            // Column doesn't exist, skip the condition
-            $sql = "SELECT * FROM recipes WHERE recipe_id = ?";
-        }
-
+    public static function getRecipeById($id, $conn) {
+        $sql = "SELECT * FROM recipes WHERE recipe_id = ? AND is_deleted = 0";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
         if (!$stmt->execute()) {
@@ -283,8 +261,7 @@ class Recipe {
     }
 
     // Create new recipe
-    public static function createRecipe($data, $database) {
-        $conn = $database->conn;
+    public static function createRecipe($data, $conn) {
         $sql = "INSERT INTO recipes (user_id, title, description, prep_time, cook_time, servings, difficulty, cuisine, ingredients, instructions, image_url)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -310,8 +287,7 @@ class Recipe {
     }
 
     // Update recipe
-    public static function updateRecipe($id, $data, $database) {
-        $conn = $database->conn;
+    public static function updateRecipe($id, $data, $conn) {
         $sql = "UPDATE recipes SET
                 title = ?,
                 description = ?,
@@ -344,42 +320,29 @@ class Recipe {
     }
 
     // Delete recipe (soft delete)
-    public static function deleteRecipe($id, $database) {
-        $conn = $database->conn;
-
-        // Check if the is_deleted column exists in the recipes table
-        $checkColumnSql = "SHOW COLUMNS FROM recipes LIKE 'is_deleted'";
-        $columnResult = $conn->query($checkColumnSql);
-
-        if ($columnResult && $columnResult->num_rows > 0) {
-            // Column exists, use soft delete
-            $sql = "UPDATE recipes SET is_deleted = 1 WHERE recipe_id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("i", $id);
-            return $stmt->execute();
-        } else {
-            // Column doesn't exist, use hard delete
-            $sql = "DELETE FROM recipes WHERE recipe_id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("i", $id);
-            return $stmt->execute();
-        }
+    public static function deleteRecipe($id, $conn) {
+        $sql = "UPDATE recipes SET is_deleted = 1 WHERE recipe_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
     }
 
     // Get all recipes for admin (including deleted)
-    public static function getAllRecipesAdmin($database) {
-        $conn = $database->conn;
+    public static function getAllRecipesAdmin($conn) {
         $sql = "SELECT * FROM recipes";
         $result = $conn->query($sql);
         if (!$result) {
             return false;
         }
-        return $database->fetchAll($result);
+        $recipes = [];
+        while ($row = $result->fetch_assoc()) {
+            $recipes[] = $row;
+        }
+        return $recipes;
     }
 
     // Restore deleted recipe
-    public static function restoreRecipe($id, $database) {
-        $conn = $database->conn;
+    public static function restoreRecipe($id, $conn) {
         $sql = "UPDATE recipes SET is_deleted = 0 WHERE recipe_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
@@ -387,8 +350,7 @@ class Recipe {
     }
 
     // Permanently delete recipe
-    public static function permanentlyDeleteRecipe($id, $database) {
-        $conn = $database->conn;
+    public static function permanentlyDeleteRecipe($id, $conn) {
         $sql = "DELETE FROM recipes WHERE recipe_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
@@ -396,8 +358,7 @@ class Recipe {
     }
 
     // Get favorite recipes
-    public static function getFavoriteRecipes($user_id, $database) {
-        $conn = $database->conn;
+    public static function getFavoriteRecipes($user_id, $conn) {
         // Check if favorite_recipes table exists
         $checkTableSql = "SHOW TABLES LIKE 'favorite_recipes'";
         $tableResult = $conn->query($checkTableSql);
@@ -424,12 +385,15 @@ class Recipe {
             return false;
         }
         $result = $stmt->get_result();
-        return $database->fetchAll($result);
+        $recipes = [];
+        while ($row = $result->fetch_assoc()) {
+            $recipes[] = $row;
+        }
+        return $recipes;
     }
 
     // Get recently viewed recipes
-    public static function getRecentlyViewed($user_id, $database) {
-        $conn = $database->conn;
+    public static function getRecentlyViewed($user_id, $conn) {
         $sql = "SELECT r.* FROM recipes r
                 INNER JOIN recently_viewed rv ON r.recipe_id = rv.recipe_id
                 WHERE rv.user_id = ? AND r.is_deleted = 0
@@ -441,12 +405,15 @@ class Recipe {
             return false;
         }
         $result = $stmt->get_result();
-        return $database->fetchAll($result);
+        $recipes = [];
+        while ($row = $result->fetch_assoc()) {
+            $recipes[] = $row;
+        }
+        return $recipes;
     }
 
     // Add to recently viewed
-    public static function addToRecentlyViewed($user_id, $recipe_id, $database) {
-        $conn = $database->conn;
+    public static function addToRecentlyViewed($user_id, $recipe_id, $conn) {
         // First delete any existing entry
         $sql = "DELETE FROM recently_viewed WHERE user_id = ? AND recipe_id = ?";
         $stmt = $conn->prepare($sql);
@@ -461,8 +428,7 @@ class Recipe {
     }
 
     // Update favorite status
-    public static function updateFavoriteStatus($recipe_id, $favourite, $database) {
-        $conn = $database->conn;
+    public static function updateFavoriteStatus($recipe_id, $favourite, $conn) {
 
         // Check if user is logged in
         if (!isset($_SESSION['user_id'])) {
