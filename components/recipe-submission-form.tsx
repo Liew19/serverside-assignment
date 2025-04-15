@@ -89,6 +89,10 @@ export default function RecipeSubmissionForm({
         setFeedbackMessage("Your recipe has been submitted to the competition.")
         setIsSuccess(true)
         onSubmitSuccess()
+        // Optionally, you could delay closing the dialog to let the user see the message.
+        setTimeout(() => {
+          onOpenChange(false)
+        }, 1500)
       } else {
         setFeedbackMessage(data.message)  //show repeated submission
         setIsSuccess(false)
@@ -179,10 +183,7 @@ export default function RecipeSubmissionForm({
         )}
 
         <DialogFooter>
-          <Button variant="outline"  onClick={() => {
-            onOpenChange(false);
-            window.location.reload(); // force full page reload
-          }}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading || !selectedRecipe}>

@@ -7,13 +7,13 @@ header("Access-Control-Allow-Credentials: true"); // Allow cookies/auth headers
 header("Access-Control-Allow-Headers: Content-Type, Authorization, Cache-Control, Pragma");  // Allow the Cache-Control header
 require_once "../users/User.php";
 
-
 session_start();
-$conn = new mysqli("localhost", "root", "password", "database_test2");
+$database = new Database("localhost", "root", "password");
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'login') {
   $email = $_POST['email'];
   $password = $_POST['password'];
-  $user = User::login($email, $password, $conn);
+  $user = User::login($email, $password, $database);
 
   if ($user) {
     $_SESSION['user_id'] = $user['user_id'];

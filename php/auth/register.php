@@ -8,13 +8,13 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, Cache-Control
 require_once "../users/User.php";
 
 session_start();
-$conn = new mysqli("localhost", "root", "password", "database_test2");
+$database = new Database("localhost", "root", "password");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'register') {
   $username = $_POST['username'];
   $email = $_POST['email'];
   $password = $_POST['password'];
-  $register = User::register($username, $email, $password, $conn);
+  $register = User::register($username, $email, $password, $database);
 
   if ($register) {
     http_response_code(200);
