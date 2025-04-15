@@ -21,6 +21,17 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -37,37 +48,64 @@ export default function RecipeDetailPage({
   const [isEditing, setIsEditing] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const getCookie = (name: string): string | null => {
+    if (typeof document === "undefined" || !document.cookie) return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()!.split(";").shift()!;
+    return null;
+  };
 
   useEffect(() => {
-    const fetchRecipe = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.length > 0) {
-            const recipeData = data[0];
-            // Convert string ingredients and instructions to arrays
-            setRecipe({
-              ...recipeData,
-              favourite: Number(recipeData.favourite),
-              ingredients: recipeData.ingredients
-                ? recipeData.ingredients.split("\n")
-                : [],
-              instructions: recipeData.instructions
-                ? recipeData.instructions.split("\n")
-                : [],
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching recipe:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const userId = getCookie("user_id");
+    setCurrentUserId(userId);
+    console.log("Current user ID from cookie:", userId);
+  }, []);
 
+  // Function to fetch recipe data
+  const fetchRecipe = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `http://localhost/server/php/recipes/api/recipes.php?id=${params.id}`,
+        {
+          credentials: "include", // Add credentials to include cookies
+          headers: {
+            "Content-Type": "application/json",
+          },
+          cache: "no-store", // Prevent caching
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const recipeData = data[0];
+          console.log("Fetched recipe data:", recipeData);
+          // Convert string ingredients and instructions to arrays
+          setRecipe({
+            ...recipeData,
+            favourite: Number(recipeData.favourite),
+            ingredients: recipeData.ingredients
+              ? recipeData.ingredients.split("\n")
+              : [],
+            instructions: recipeData.instructions
+              ? recipeData.instructions.split("\n")
+              : [],
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch when component mounts or ID changes
+  useEffect(() => {
     fetchRecipe();
   }, [params.id]);
 
@@ -75,9 +113,10 @@ export default function RecipeDetailPage({
     try {
       const newFavouriteValue = recipe.favourite === 1 ? 0 : 1;
       const response = await fetch(
-        `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`,
+        `http://localhost/server/php/recipes/api/recipes.php?id=${params.id}`,
         {
           method: "PUT",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -85,39 +124,111 @@ export default function RecipeDetailPage({
         }
       );
 
+      // Try to parse the response as JSON for better error handling
+      let data;
+      try {
+        const text = await response.text();
+        console.log("Favourite update response text:", text);
+        if (text) {
+          data = JSON.parse(text);
+          console.log("Favourite update response parsed:", data);
+        }
+      } catch (parseError) {
+        console.error("Error parsing favourite update response:", parseError);
+      }
+
       if (response.ok) {
-        setRecipe((prev: any) => ({
-          ...prev,
-          favourite: newFavouriteValue,
-        }));
+        // If the server returned the updated recipe, use that data
+        if (data && data.recipe) {
+          const updatedRecipe = data.recipe;
+          setRecipe((prev: any) => ({
+            ...prev,
+            favourite: Number(updatedRecipe.favourite),
+          }));
+        } else {
+          // Otherwise just update the favourite status locally
+          setRecipe((prev: any) => ({
+            ...prev,
+            favourite: newFavouriteValue,
+          }));
+        }
+
+        // Refresh the recipe data to ensure we have the latest state
+        setTimeout(() => {
+          fetchRecipe();
+        }, 500); // Small delay to ensure the server has processed the update
+      } else {
+        console.error("Failed to update favourite status");
+        alert("Failed to update favourite status. Please try again.");
       }
     } catch (error) {
       console.error("Error updating favourite status:", error);
+      alert(
+        "An error occurred while updating favourite status. Please try again."
+      );
     }
   };
 
   const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this recipe? This action cannot be undone."
-      )
-    ) {
-      try {
-        const response = await fetch(
-          `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-        if (response.ok) {
-          router.push("/recipes"); // Redirect to recipes page after successful deletion
-        } else {
-          console.error("Failed to delete recipe");
+    try {
+      const response = await fetch(
+        `http://localhost/server/php/recipes/api/recipes.php?id=${params.id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-      } catch (error) {
-        console.error("Error deleting recipe:", error);
+      );
+
+      // Try to parse the response as JSON, but handle the case where it's not valid JSON
+      let data;
+      try {
+        const text = await response.text();
+        console.log("Delete response text:", text);
+        if (text) {
+          data = JSON.parse(text);
+          console.log("Delete response parsed:", data);
+        }
+      } catch (parseError) {
+        console.error("Error parsing delete response:", parseError);
       }
+
+      if (response.ok) {
+        // Close the dialog first
+        setIsDeleteDialogOpen(false);
+        // Then navigate
+        router.replace("/recipes");
+      } else {
+        // Check if error contains foreign key constraint message
+        if (
+          data &&
+          data.error &&
+          data.error.includes("foreign key constraint fails")
+        ) {
+          let errorMessage = "Cannot delete this recipe because it is:";
+          if (data.error.includes("favorite_recipes")) {
+            errorMessage += "\n- In someone's favorites";
+          }
+          if (data.error.includes("competition_entries")) {
+            errorMessage += "\n- Used in a competition";
+          }
+          alert(
+            errorMessage + "\n\nPlease remove these references before deleting."
+          );
+        } else {
+          alert(
+            "Failed to delete recipe: " +
+              (data && data.error ? data.error : "Unknown error")
+          );
+        }
+        setIsDeleteDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      alert("Error occurred while deleting recipe");
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -199,29 +310,52 @@ export default function RecipeDetailPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Create a copy of the recipe without the favourite property
+      const { favourite, ...recipeWithoutFavourite } = recipe;
+
       const response = await fetch(
-        `http://localhost/assignmentbackend/api/recipes.php?id=${params.id}`,
+        `http://localhost/server/php/recipes/api/recipes.php?id=${params.id}`,
         {
           method: "PUT",
+          credentials: "include", // Add credentials to include cookies
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            ...recipe,
+            ...recipeWithoutFavourite,
             ingredients: recipe.ingredients.join("\n"),
             instructions: recipe.instructions.join("\n"),
           }),
         }
       );
 
+      // Try to parse the response as JSON for better error handling
+      let data;
+      try {
+        const text = await response.text();
+        console.log("Update response text:", text);
+        if (text) {
+          data = JSON.parse(text);
+          console.log("Update response parsed:", data);
+        }
+      } catch (parseError) {
+        console.error("Error parsing update response:", parseError);
+      }
+
       if (response.ok) {
         setIsEditing(false);
-        router.refresh();
+        // Refresh the recipe data to ensure we have the latest state
+        fetchRecipe();
       } else {
-        console.error("Failed to update recipe");
+        // Show more detailed error message
+        const errorMessage =
+          data && data.message ? data.message : "Failed to update recipe";
+        console.error(errorMessage);
+        alert(errorMessage);
       }
     } catch (error) {
       console.error("Error updating recipe:", error);
+      alert("An error occurred while updating the recipe. Please try again.");
     }
   };
 
@@ -457,18 +591,48 @@ export default function RecipeDetailPage({
                 />
                 {recipe.favourite === 1 ? "Favorited" : "Favorite"}
               </Button>
-              <Button
-                size="sm"
-                className="bg-rose-500 hover:bg-rose-700"
-                onClick={handleDelete}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-              <Button size="sm" onClick={() => setIsEditing(true)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
+              {currentUserId &&
+                recipe.user_id &&
+                currentUserId.toString() === recipe.user_id.toString() && (
+                  <>
+                    <AlertDialog
+                      open={isDeleteDialogOpen}
+                      onOpenChange={setIsDeleteDialogOpen}
+                    >
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="bg-rose-500 hover:bg-rose-700"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete your recipe and remove all associated data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-rose-500 hover:bg-rose-700"
+                            onClick={handleDelete}
+                          >
+                            Delete Recipe
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  </>
+                )}
             </div>
           </div>
 

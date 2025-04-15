@@ -1,17 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import type React from "react";
+import { ArrowRight, Calendar, ChefHat, Trophy, Users } from "lucide-react";
 import Link from "next/link";
-import {
-  ChefHat,
-  Calendar,
-  Users,
-  Trophy,
-  ArrowRight,
-  Heart,
-  Clock,
-} from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { RecipeCard } from "@/components/ui/recipe-card";
 
 interface Recipe {
@@ -48,7 +39,13 @@ export default function Home() {
     const fetchRecipes = async () => {
       try {
         const response = await fetch(
-          "http://localhost/assignmentbackend/api/recipes.php"
+          "http://localhost/server/php/recipes/api/recipes.php?limit=100",
+          {
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
         if (response.ok) {
           const data = await response.json();
@@ -77,9 +74,10 @@ export default function Home() {
       const newFavouriteValue = currentFavourite === 0 ? 1 : 0;
 
       const response = await fetch(
-        `http://localhost/assignmentbackend/api/recipes.php?id=${recipeId}`,
+        `http://localhost/server/php/recipes/api/recipes.php?id=${recipeId}`,
         {
           method: "PUT",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },

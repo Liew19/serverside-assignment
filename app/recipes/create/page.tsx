@@ -101,9 +101,10 @@ export default function CreateRecipePage() {
 
     try {
       const response = await fetch(
-        "http://localhost/assignmentbackend/api/recipes.php",
+        "http://localhost/server/php/recipes/api/recipes.php",
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -111,7 +112,6 @@ export default function CreateRecipePage() {
             ...formData,
             ingredients: formData.ingredients.join("\n"),
             instructions: formData.instructions.join("\n"),
-            user_id: 1, // You should replace this with the actual user ID
           }),
         }
       );

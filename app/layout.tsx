@@ -1,34 +1,126 @@
+"use client";
+
 import type React from "react";
 import { Inter } from "next/font/google";
 import Link from "next/link";
-import { ChefHat, Search, Bell, User } from "lucide-react";
+import { ChefHat, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { HamburgerMenu } from "@/components/ui/hamburger-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "CookMaster - Recipe Management & Meal Planning",
-  description:
-    "Your all-in-one platform for recipe management, meal planning, community engagement, and cooking competitions.",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [username, setUsername] = useState("");
+
+  const checkLoginStatus = async () => {
+    const userId = getCookie("user_id");
+    if (userId) {
+      setIsLoggedIn(true);
+      setUsername(getCookie("username")!);
+      // Check if user is admin
+      try {
+        console.log("Checking admin status...");
+        const response = await fetch(
+          "http://localhost/server/php/recipes/api/admin.php",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "check_admin",
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          console.error("Admin check failed with status:", response.status);
+          return;
+        }
+
+        // Check if response is empty
+        const text = await response.text();
+        console.log("Admin check response text:", text);
+
+        if (!text) {
+          console.error("Empty response from admin check");
+          return;
+        }
+
+        const data = JSON.parse(text);
+        console.log("Admin check parsed data:", data);
+
+        if (data.success) {
+          setIsAdmin(data.is_admin);
+        }
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+      }
+    } else {
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+      setUsername("");
+    }
+  };
+
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost/server/php/auth/logout.php",
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        document.cookie =
+          "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie =
+          "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+        setUsername("");
+        router.push("/login");
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  };
+
+  function getCookie(name: string): string | null {
+    if (typeof document === "undefined") return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()!.split(";").shift()!;
+    return null;
+  }
+
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -81,48 +173,130 @@ export default function RootLayout({
                 </div>
 
                 <div className="ml-auto flex items-center gap-4">
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary"></span>
-                  </Button>
+                  {isLoggedIn ? (
+                    <>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-full"
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src="/placeholder.svg"
+                                alt={username}
+                              />
+                              <AvatarFallback>
+                                {username.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {isAdmin && (
+                            <DropdownMenuItem>
+                              <span className="text-sm font-medium text-primary">
+                                Admin
+                              </span>
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onSelect={handleLogout}>
+                            Logout
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-full"
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src="/placeholder.svg" alt="User" />
-                          <AvatarFallback>
-                            <User className="h-4 w-4" />
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile">Profile</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/settings">Settings</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/logout">Logout</Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <div className="hidden md:flex items-center gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href="/login">Login</Link>
-                    </Button>
-                    <Button size="sm" asChild>
-                      <Link href="/register">Register</Link>
-                    </Button>
-                  </div>
+                      <HamburgerMenu className="md:hidden">
+                        <Link
+                          href="/recipes"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Recipes
+                        </Link>
+                        <Link
+                          href="/meal-planning"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Meal Planning
+                        </Link>
+                        <Link
+                          href="/community"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Community
+                        </Link>
+                        <Link
+                          href="/competitions"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Competitions
+                        </Link>
+                        <div className="border-t mt-4 pt-4">
+                          {isAdmin && (
+                            <div className="py-2 text-primary">Admin User</div>
+                          )}
+                          <button
+                            onClick={handleLogout}
+                            className="flex w-full items-center gap-2 py-2 hover:text-primary transition-colors"
+                          >
+                            Logout
+                          </button>
+                        </div>
+                      </HamburgerMenu>
+                    </>
+                  ) : (
+                    <>
+                      <div className="hidden md:flex items-center gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href="/login">Login</Link>
+                        </Button>
+                        <Button size="sm" asChild>
+                          <Link href="/register">Register</Link>
+                        </Button>
+                      </div>
+                      <HamburgerMenu className="md:hidden">
+                        <Link
+                          href="/recipes"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Recipes
+                        </Link>
+                        <Link
+                          href="/meal-planning"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Meal Planning
+                        </Link>
+                        <Link
+                          href="/community"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Community
+                        </Link>
+                        <Link
+                          href="/competitions"
+                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Competitions
+                        </Link>
+                        <div className="border-t mt-4 pt-4">
+                          <Link
+                            href="/login"
+                            className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                          >
+                            Login
+                          </Link>
+                          <Link
+                            href="/register"
+                            className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                          >
+                            Register
+                          </Link>
+                        </div>
+                      </HamburgerMenu>
+                    </>
+                  )}
                 </div>
               </div>
             </header>

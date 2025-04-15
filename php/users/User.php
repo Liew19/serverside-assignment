@@ -1,5 +1,5 @@
 <?php
-require_once 'D:\php2\htdocs\server\php\database\database.php';
+require_once '"C:\Users\User\OneDrive\Documents\ServerSide\htdocs\assignmentbackend\serverside-assignment\php\database\database.php"';
 class User
 {
   public static function register($username, $email, $password, $database)
