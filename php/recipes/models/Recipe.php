@@ -427,50 +427,6 @@ class Recipe {
         return $database->fetchAll($result);
     }
 
-    // Add to favorites
-    public static function addToFavorites($user_id, $recipe_id, $database) {
-        $conn = $database->conn;
-        // Check if favorite_recipes table exists
-        $checkTableSql = "SHOW TABLES LIKE 'favorite_recipes'";
-        $tableResult = $conn->query($checkTableSql);
-
-        if ($tableResult && $tableResult->num_rows > 0) {
-            // Use the favorite_recipes table
-            $sql = "INSERT INTO favorite_recipes (user_id, recipe_id) VALUES (?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ii", $user_id, $recipe_id);
-            return $stmt->execute();
-        } else {
-            // Fall back to using the favourite column in recipes table
-            $sql = "UPDATE recipes SET favourite = 1 WHERE recipe_id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("i", $recipe_id);
-            return $stmt->execute();
-        }
-    }
-
-    // Remove from favorites
-    public static function removeFromFavorites($user_id, $recipe_id, $database) {
-        $conn = $database->conn;
-        // Check if favorite_recipes table exists
-        $checkTableSql = "SHOW TABLES LIKE 'favorite_recipes'";
-        $tableResult = $conn->query($checkTableSql);
-
-        if ($tableResult && $tableResult->num_rows > 0) {
-            // Use the favorite_recipes table
-            $sql = "DELETE FROM favorite_recipes WHERE user_id = ? AND recipe_id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ii", $user_id, $recipe_id);
-            return $stmt->execute();
-        } else {
-            // Fall back to using the favourite column in recipes table
-            $sql = "UPDATE recipes SET favourite = 0 WHERE recipe_id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("i", $recipe_id);
-            return $stmt->execute();
-        }
-    }
-
     // Get recently viewed recipes
     public static function getRecentlyViewed($user_id, $database) {
         $conn = $database->conn;
