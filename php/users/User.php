@@ -80,4 +80,5 @@ class User
     $result = $result->fetch_assoc();
     return $result['role'] === 'admin';
   }
+
 }
