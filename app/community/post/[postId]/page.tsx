@@ -32,10 +32,7 @@ export default function PostDetail() {
   useEffect(() => {
     if (!postId) return;
 
-    // Directly parse the postId as it's expected to be a single string
     const postIdNumber = parseInt(postId as string, 10); // Ensure postId is treated as a string
-
-    console.log("Parsed postIdNumber:", postIdNumber);
 
     if (isNaN(postIdNumber)) {
       console.error("Invalid postId:", postId);
@@ -67,7 +64,6 @@ export default function PostDetail() {
           `http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=getComments&postId=${postIdNumber}`
         );
         const data = await res.json();
-        console.log("Comments data:", data); // Log the response data
         if (data.data) {
           setComments(data.data);
         }
@@ -93,6 +89,7 @@ export default function PostDetail() {
             headers: {
               "Content-Type": "application/json",
             },
+            credentials: "include",
             body: JSON.stringify({
               postId,
               content: newComment,
