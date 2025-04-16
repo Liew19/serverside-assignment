@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   $result = Competition::createCompetition($name, $description, $start_date, $end_date, $voting_end_date, $prize, $conn);
   if ($result) {
     http_response_code(201);
-    echo json_encode(['message' => 'Competition created successfully', 'competition_id' => $result]);
+    echo json_encode(['status' => 'success', 'competition_id' => $result]);
   } else {
     http_response_code(500);
     echo json_encode(['message' => 'Failed to create competition']);
