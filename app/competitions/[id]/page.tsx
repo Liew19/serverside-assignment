@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
+import {useRouter} from "next/navigation";
 import { ArrowLeft, Calendar, Share2, ThumbsUp, Trophy, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -90,9 +91,10 @@ export default function CompetitionDetailPage({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null)
   const [deleteReason, setDeleteReason] = useState("")
-
+  const router = useRouter();
   useEffect(() => {
     if (!user_id || !competitionId) return;
+    
     const checkStatus = async() =>{   //to check if user did fake admin id in get
       const checkUrl = `http://localhost/server/php/competition/api/user.php`
       const checkStatus = await fetch(checkUrl, {
@@ -108,6 +110,11 @@ export default function CompetitionDetailPage({
       })
       const status = await checkStatus.json()
       console.log("status", status);
+      if (status.status == 'fake cookie') {
+        console.log("fake cookie"); //if user fake cookie impersonate, straight logout
+        router.push("/logout");
+        return;
+      }
       if(status.status == true){
         if(status.admin == true){
           setAdmin(true);
