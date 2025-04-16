@@ -1,87 +1,105 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { ChefHat, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import type React from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import {
+  ChefHat,
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   // Redirect on success
   useEffect(() => {
     if (success) {
-      console.log("Success state is true, setting up redirect timer")
+      console.log("Success state is true, setting up redirect timer");
       const timer = setTimeout(() => {
-        console.log("Redirecting now...")
-        window.location.href = "/"
-      }, 1500)
-      return () => clearTimeout(timer)
+        console.log("Redirecting now...");
+        window.location.href = "/main";
+      }, 1500);
+      return () => clearTimeout(timer);
     }
-  }, [success])
+  }, [success]);
 
   // Clear error when user modifies inputs
   useEffect(() => {
-    if (error) setError(null)
-  }, [email, password])
+    if (error) setError(null);
+  }, [email, password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     try {
-      console.log("Sending login request...")
-      const response = await fetch("http://localhost/server/php/auth/login.php", {
-        credentials: "include",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          action: "login",
-          email: email,
-          password: password,
-        }).toString(),
-      })
+      console.log("Sending login request...");
+      const response = await fetch(
+        "http://localhost/server/php/auth/login.php",
+        {
+          credentials: "include",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            action: "login",
+            email: email,
+            password: password,
+          }).toString(),
+        }
+      );
 
-      const data = await response.json()
-      
+      const data = await response.json();
+
       if (data.status === "success") {
         const username = data.username;
         const user_id = data.user_id;
-        console.log("Login successful")
-        document.cookie = `user_id=${user_id}; path=/;`; 
+        console.log("Login successful");
+        document.cookie = `user_id=${user_id}; path=/;`;
         document.cookie = `username=${username}; path=/;`;
-        setSuccess(true)
+        setSuccess(true);
       } else {
-        console.log("Login failed:", data.message)
-        setError(data.message || "Invalid email or password. Please try again.")
+        console.log("Login failed:", data.message);
+        setError(
+          data.message || "Invalid email or password. Please try again."
+        );
       }
     } catch (error) {
-      console.error("Login error:", error)
-      setError("An error occurred while trying to log in. Please try again.")
+      console.error("Login error:", error);
+      setError("An error occurred while trying to log in. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Manual redirect function for testing
   const manualRedirect = () => {
-    console.log("Manual redirect triggered")
-    window.location.href = "/"
-  }
+    console.log("Manual redirect triggered");
+    window.location.href = "/main";
+  };
 
   return (
     <div className="container flex items-center justify-center min-h-[calc(100vh-4rem)] py-10 px-4">
@@ -92,13 +110,17 @@ export default function LoginPage() {
             <span className="text-2xl font-bold">CookMaster</span>
           </Link>
           <h1 className="text-2xl font-bold mt-4">Welcome back</h1>
-          <p className="text-muted-foreground text-center mt-2">Enter your credentials to access your account</p>
+          <p className="text-muted-foreground text-center mt-2">
+            Enter your credentials to access your account
+          </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Login</CardTitle>
-            <CardDescription>Sign in to your CookMaster account</CardDescription>
+            <CardDescription>
+              Sign in to your CookMaster account
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {error && (
@@ -109,9 +131,14 @@ export default function LoginPage() {
             )}
 
             {success && (
-              <Alert variant="default" className="mb-4 bg-green-50 border-green-200 text-green-800">
+              <Alert
+                variant="default"
+                className="mb-4 bg-green-50 border-green-200 text-green-800"
+              >
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <AlertDescription>Login successful! Redirecting to homepage...</AlertDescription>
+                <AlertDescription>
+                  Login successful! Redirecting to main page...
+                </AlertDescription>
               </Alert>
             )}
 
@@ -133,7 +160,10 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-primary hover:underline"
+                  >
                     Forgot password?
                   </Link>
                 </div>
@@ -161,7 +191,9 @@ export default function LoginPage() {
                     ) : (
                       <Eye className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                    <span className="sr-only">
+                      {showPassword ? "Hide password" : "Show password"}
+                    </span>
                   </Button>
                 </div>
               </div>
@@ -174,7 +206,11 @@ export default function LoginPage() {
               </div>
 
               {success ? (
-                <Button type="button" className="w-full" onClick={manualRedirect}>
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={manualRedirect}
+                >
                   Go to homepage now
                 </Button>
               ) : (
@@ -194,5 +230,5 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

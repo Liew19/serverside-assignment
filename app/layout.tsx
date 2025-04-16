@@ -129,7 +129,7 @@ export default function RootLayout({
             <header className="border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="container flex h-16 items-center px-4">
                 <Link
-                  href="/"
+                  href={isLoggedIn ? "/main" : "/"}
                   className="flex items-center gap-2 font-semibold mr-8"
                 >
                   <ChefHat className="h-6 w-6 text-primary" />
@@ -143,161 +143,131 @@ export default function RootLayout({
                   >
                     Recipes
                   </Link>
-                  <Link
-                    href="/meal-planning"
-                    className="text-sm font-medium hover:text-primary transition-colors"
-                  >
-                    Meal Planning
-                  </Link>
-                  <Link
-                    href="/community"
-                    className="text-sm font-medium hover:text-primary transition-colors"
-                  >
-                    Community
-                  </Link>
-                  <Link
-                    href="/competitions"
-                    className="text-sm font-medium hover:text-primary transition-colors"
-                  >
-                    Competitions
-                  </Link>
+                  {isLoggedIn && (
+                    <>
+                      <Link
+                        href="/meal-planning"
+                        className="text-sm font-medium hover:text-primary transition-colors"
+                      >
+                        Meal Planning
+                      </Link>
+                      <Link
+                        href="/community"
+                        className="text-sm font-medium hover:text-primary transition-colors"
+                      >
+                        Community
+                      </Link>
+                      <Link
+                        href="/competitions"
+                        className="text-sm font-medium hover:text-primary transition-colors"
+                      >
+                        Competitions
+                      </Link>
+                    </>
+                  )}
                 </nav>
-
-                <div className="relative hidden md:flex flex-1 max-w-sm">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search recipes..."
-                    className="pl-8 w-full"
-                  />
-                </div>
 
                 <div className="ml-auto flex items-center gap-4">
                   {isLoggedIn ? (
-                    <>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full"
-                          >
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage
-                                src="/placeholder.svg"
-                                alt={username}
-                              />
-                              <AvatarFallback>
-                                {username.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {isAdmin && (
-                            <DropdownMenuItem>
-                              <span className="text-sm font-medium text-primary">
-                                Admin
-                              </span>
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onSelect={handleLogout}>
-                            Logout
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-full"
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage
+                              src="/placeholder.svg"
+                              alt={username}
+                            />
+                            <AvatarFallback>
+                              {username.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {isAdmin && (
+                          <DropdownMenuItem>
+                            <span className="text-sm font-medium text-primary">
+                              Admin
+                            </span>
                           </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-
-                      <HamburgerMenu className="md:hidden">
-                        <Link
-                          href="/recipes"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Recipes
-                        </Link>
-                        <Link
-                          href="/meal-planning"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Meal Planning
-                        </Link>
-                        <Link
-                          href="/community"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Community
-                        </Link>
-                        <Link
-                          href="/competitions"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Competitions
-                        </Link>
-                        <div className="border-t mt-4 pt-4">
-                          {isAdmin && (
-                            <div className="py-2 text-primary">Admin User</div>
-                          )}
-                          <button
-                            onClick={handleLogout}
-                            className="flex w-full items-center gap-2 py-2 hover:text-primary transition-colors"
-                          >
-                            Logout
-                          </button>
-                        </div>
-                      </HamburgerMenu>
-                    </>
+                        )}
+                        <DropdownMenuItem onClick={handleLogout}>
+                          Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : (
                     <>
-                      <div className="hidden md:flex items-center gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href="/login">Login</Link>
-                        </Button>
-                        <Button size="sm" asChild>
-                          <Link href="/register">Register</Link>
-                        </Button>
-                      </div>
-                      <HamburgerMenu className="md:hidden">
-                        <Link
-                          href="/recipes"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Recipes
-                        </Link>
-                        <Link
-                          href="/meal-planning"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Meal Planning
-                        </Link>
-                        <Link
-                          href="/community"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Community
-                        </Link>
-                        <Link
-                          href="/competitions"
-                          className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                        >
-                          Competitions
-                        </Link>
-                        <div className="border-t mt-4 pt-4">
-                          <Link
-                            href="/login"
-                            className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                          >
-                            Login
-                          </Link>
-                          <Link
-                            href="/register"
-                            className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
-                          >
-                            Register
-                          </Link>
-                        </div>
-                      </HamburgerMenu>
+                      <Link href="/login">
+                        <Button variant="ghost">Login</Button>
+                      </Link>
+                      <Link href="/register">
+                        <Button>Register</Button>
+                      </Link>
                     </>
                   )}
                 </div>
+
+                <HamburgerMenu className="ml-4 md:hidden">
+                  <Link
+                    href="/recipes"
+                    className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                  >
+                    Recipes
+                  </Link>
+                  {isLoggedIn ? (
+                    <>
+                      <Link
+                        href="/meal-planning"
+                        className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                      >
+                        Meal Planning
+                      </Link>
+                      <Link
+                        href="/community"
+                        className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                      >
+                        Community
+                      </Link>
+                      <Link
+                        href="/competitions"
+                        className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                      >
+                        Competitions
+                      </Link>
+                      <div className="border-t mt-4 pt-4">
+                        {isAdmin && (
+                          <div className="py-2 text-primary">Admin User</div>
+                        )}
+                        <button
+                          onClick={handleLogout}
+                          className="flex w-full items-center gap-2 py-2 hover:text-primary transition-colors"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="border-t mt-4 pt-4">
+                      <Link
+                        href="/login"
+                        className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/register"
+                        className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+                      >
+                        Register
+                      </Link>
+                    </div>
+                  )}
+                </HamburgerMenu>
               </div>
             </header>
             <main className="flex-1">{children}</main>

@@ -665,47 +665,33 @@ export default function RecipeDetailPage({
             </TabsList>
 
             <TabsContent value="instructions" className="mt-6">
-              <ol className="space-y-6 list-decimal list-inside">
+              <div className="space-y-6">
                 {recipe.instructions.map((step: string, index: number) => (
-                  <li key={index} className="pl-2">
-                    <div className="inline font-medium">Step {index + 1}:</div>{" "}
-                    {step}
-                  </li>
+                  <div key={index} className="flex gap-2">
+                    <div className="font-medium">Step {index + 1}:</div>
+                    <div>{step}</div>
+                  </div>
                 ))}
-              </ol>
+              </div>
             </TabsContent>
 
             <TabsContent value="ingredients" className="mt-6">
               <div className="bg-primary/5 rounded-lg p-4 mb-6">
-                <div className="flex justify-between items-center mb-4">
+                <div className="mb-4">
                   <h3 className="font-medium">
                     Ingredients for {recipe.servings} servings
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      -
-                    </Button>
-                    <span>{recipe.servings}</span>
-                    <Button variant="outline" size="sm">
-                      +
-                    </Button>
-                  </div>
                 </div>
                 <Separator className="mb-4" />
                 <ul className="space-y-3">
                   {recipe.ingredients.map(
                     (ingredient: string, index: number) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <div className="h-5 w-5 rounded-md border flex items-center justify-center">
-                          <div className="h-3 w-3 rounded-sm bg-primary/0 hover:bg-primary/20 cursor-pointer transition-colors"></div>
-                        </div>
+                      <li key={index}>
                         <span>{ingredient}</span>
                       </li>
                     )
                   )}
                 </ul>
-                <Separator className="mt-4 mb-4" />
-                <Button className="w-full">Add All To Shopping List</Button>
               </div>
             </TabsContent>
           </Tabs>
