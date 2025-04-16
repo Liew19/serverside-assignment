@@ -58,7 +58,6 @@ export default function CompetitionsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 2. Check status
         if (!user_id) {
           console.warn("No user_id found in cookie or state.");
           router.push("/");
