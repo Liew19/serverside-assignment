@@ -11,7 +11,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, Cache-Control
 
 
 session_start();
-$conn = new mysqli("localhost", "root", "password", "database_test2");
+$conn = new mysqli("localhost", "root", "", "recipe_database");
 
 
 if (!isset($_SESSION['user_id'])) {
