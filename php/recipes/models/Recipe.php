@@ -320,7 +320,7 @@ class Recipe {
                 WHERE recipe_id = ?";
 
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssiiiissssi",
+        $stmt->bind_param("ssiiisssssi",
             $data['title'],
             $data['description'],
             $data['prep_time'],
