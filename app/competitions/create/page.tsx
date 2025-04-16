@@ -14,8 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
 
 export default function CreateCompetitionPage() {
-  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successSubmission, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -24,7 +24,7 @@ export default function CreateCompetitionPage() {
     voting_end_date: "",
     prize: "",
   })
-
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -32,7 +32,7 @@ export default function CreateCompetitionPage() {
       [name]: value,
     }))
   }
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -61,12 +61,17 @@ export default function CreateCompetitionPage() {
       const data = await response.json()
 
       if (data.status === "success") {
-        toast({
-          title: "Competition Created",
-          description: "Your competition has been created successfully.",
-        })
-        router.push("/competitions")
-      } else {
+        setSuccess(true);
+        setFormData({
+          title: "",
+          description: "",
+          start_date: "",
+          end_date: "",
+          voting_end_date: "",
+          prize: "",
+        });
+      }
+       else {
         throw new Error(data.message || "Failed to create competition")
       }
     } catch (error) {
@@ -95,6 +100,11 @@ export default function CreateCompetitionPage() {
           <CardTitle className="text-2xl">Create New Competition</CardTitle>
         </CardHeader>
         <CardContent>
+          {successSubmission && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              <strong className="font-semibold">Success!</strong> Your competition has been created.
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Competition Title</Label>
@@ -183,6 +193,7 @@ export default function CreateCompetitionPage() {
             </div>
           </form>
         </CardContent>
+        
       </Card>
     </div>
   )

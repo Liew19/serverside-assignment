@@ -13,12 +13,11 @@ $conn = new mysqli("localhost", "root", "", "recipe_database");
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'login') {
   $email = $_POST['email'];
   $password = $_POST['password'];
-  $user = User::login($email, $password, $conn);
+  $user = User::login($email, $password, $conn);    //return user assoc_array, fields include user_id, username, email, role
 
   if ($user) {
     $_SESSION['user_id'] = $user['user_id'];
-    $_SESSION['username'] = $user['username'];
-    $_SESSION['status'] = 'logged in';
+    $_SESSION['username'] = $user['username'];    //check for isset(COOKIE user_id) then compare SESSION user_id is enough, means logged in  
     $_SESSION['role'] = $user['role'];
     http_response_code(200);
     echo json_encode([
@@ -27,6 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
       'user_id' => $user['user_id'],
       'username' => $user['username'],
     ]);
+    setcookie("user_id", $user['user_id'], 0, '/');
+    setcookie("username", $user['username'], 0, '/');
+    setcookie("role", $user['role'], 0, '/');
   } else {
     http_response_code(400);
     echo json_encode(['message' => 'Please check your username and password']);
