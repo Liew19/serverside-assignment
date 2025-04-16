@@ -124,7 +124,6 @@ export default function RecipesPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Fetched favorite recipes:", data);
 
         // Convert favourite to number if it's not already
         const processedData = data.map((recipe: Recipe) => ({
@@ -165,7 +164,8 @@ export default function RecipesPage() {
         const processedData = data.map((recipe: Recipe) => ({
           ...recipe,
           favourite: Number(recipe.favourite),
-          user_id: Number(recipe.user_id), // Ensure user_id is a number
+          user_id: Number(recipe.user_id),
+          image_url: recipe.image_url || null, // Ensure image_url is properly handled
         }));
 
         if (pageNum === 1 || isRefresh) {

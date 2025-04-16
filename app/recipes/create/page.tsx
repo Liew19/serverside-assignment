@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -32,6 +32,8 @@ export default function CreateRecipePage() {
     cuisine: "",
     difficulty: "",
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -94,6 +96,43 @@ export default function CreateRecipePage() {
       ...prev,
       instructions: prev.instructions.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError("");
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(
+        "http://localhost/server/php/recipes/api/upload.php",
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setFormData((prev) => ({
+          ...prev,
+          image_url: data.path,
+        }));
+      } else {
+        setUploadError(data.error || "Failed to upload image");
+      }
+    } catch (error) {
+      setUploadError("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -244,14 +283,45 @@ export default function CreateRecipePage() {
 
             <div>
               <label className="block text-sm font-medium mb-2">
-                Image URL
+                Recipe Image
               </label>
-              <Input
-                name="image_url"
-                value={formData.image_url}
-                onChange={handleInputChange}
-                required
-              />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="flex-1"
+                  />
+                  {isUploading && (
+                    <div className="text-sm text-muted-foreground">
+                      Uploading...
+                    </div>
+                  )}
+                </div>
+                {uploadError && (
+                  <div className="text-sm text-red-500">{uploadError}</div>
+                )}
+                {formData.image_url && (
+                  <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={formData.image_url}
+                      alt="Recipe preview"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="text-sm text-muted-foreground">
+                  Or enter an image URL:
+                </div>
+                <Input
+                  name="image_url"
+                  value={formData.image_url}
+                  onChange={handleInputChange}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -324,10 +394,8 @@ export default function CreateRecipePage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button type="submit" size="lg">
-            Create Recipe
-          </Button>
+        <div className="flex justify-end space-x-4">
+          <Button type="submit">Create Recipe</Button>
         </div>
       </form>
     </div>

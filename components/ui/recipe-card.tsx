@@ -29,7 +29,16 @@ export function RecipeCard({
   isAdmin = false,
   onDelete,
 }: RecipeCardProps) {
-  const totalTime = Number(recipe.prep_time) + Number(recipe.cook_time);
+  // Ensure numeric values are properly converted
+  const prepTime =
+    typeof recipe.prep_time === "string"
+      ? parseInt(recipe.prep_time)
+      : recipe.prep_time;
+  const cookTime =
+    typeof recipe.cook_time === "string"
+      ? parseInt(recipe.cook_time)
+      : recipe.cook_time;
+  const totalTime = prepTime + cookTime;
 
   return (
     <Card className="group overflow-hidden hover:shadow-md transition-shadow h-[400px] flex flex-col">
@@ -66,7 +75,7 @@ export function RecipeCard({
           </div>
         </div>
       </div>
-      <div className="flex flex-col flex-1 p-4">
+      <div className="p-4 flex flex-col flex-1">
         <div className="mb-2">
           <Link
             href={`/recipes/${recipe.recipe_id}`}

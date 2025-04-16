@@ -39,7 +39,6 @@ export default function RootLayout({
       setUsername(getCookie("username")!);
       // Check if user is admin
       try {
-        console.log("Checking admin status...");
         const response = await fetch(
           "http://localhost/server/php/recipes/api/admin.php",
           {
@@ -61,7 +60,6 @@ export default function RootLayout({
 
         // Check if response is empty
         const text = await response.text();
-        console.log("Admin check response text:", text);
 
         if (!text) {
           console.error("Empty response from admin check");
@@ -69,7 +67,6 @@ export default function RootLayout({
         }
 
         const data = JSON.parse(text);
-        console.log("Admin check parsed data:", data);
 
         if (data.success) {
           setIsAdmin(data.is_admin);

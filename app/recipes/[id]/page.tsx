@@ -13,13 +13,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +24,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -38,8 +35,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+
+interface RecipeDetails {
+  recipe_id: number;
+  user_id: number;
+  title: string;
+  description: string;
+  ingredients: string[];
+  instructions: string[];
+  prep_time: number;
+  cook_time: number;
+  servings: number;
+  image_url: string;
+  created_at: string;
+  cuisine: string;
+  difficulty: string;
+  favourite?: number;
+}
 
 export default function RecipeDetailPage({
   params,
@@ -49,10 +66,13 @@ export default function RecipeDetailPage({
   const router = useRouter();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [recipe, setRecipe] = useState<any>(null);
+  const [recipe, setRecipe] = useState<RecipeDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const getCookie = (name: string): string | null => {
     if (typeof document === "undefined" || !document.cookie) return null;
@@ -65,7 +85,35 @@ export default function RecipeDetailPage({
   useEffect(() => {
     const userId = getCookie("user_id");
     setCurrentUserId(userId);
-    console.log("Current user ID from cookie:", userId);
+
+    // Check admin status
+    const checkAdminStatus = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost/server/php/recipes/api/admin.php",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "check_admin",
+            }),
+          }
+        );
+        const data = await response.json();
+        if (data.success) {
+          setIsAdmin(data.is_admin);
+        }
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+      }
+    };
+
+    if (userId) {
+      checkAdminStatus();
+    }
   }, []);
 
   // Function to fetch recipe data
@@ -86,7 +134,7 @@ export default function RecipeDetailPage({
         const data = await response.json();
         if (data && data.length > 0) {
           const recipeData = data[0];
-          console.log("Fetched recipe data:", recipeData);
+
           // Convert string ingredients and instructions to arrays
           setRecipe({
             ...recipeData,
@@ -113,6 +161,7 @@ export default function RecipeDetailPage({
   }, [params.id]);
 
   const handleFavourite = async () => {
+    if (!recipe) return;
     try {
       const newFavouriteValue = recipe.favourite === 1 ? 0 : 1;
       const response = await fetch(
@@ -131,10 +180,10 @@ export default function RecipeDetailPage({
       let data;
       try {
         const text = await response.text();
-        console.log("Favourite update response text:", text);
+        // console.log("Favourite update response text:", text);
         if (text) {
           data = JSON.parse(text);
-          console.log("Favourite update response parsed:", data);
+          // console.log("Favourite update response parsed:", data);
         }
       } catch (parseError) {
         console.error("Error parsing favourite update response:", parseError);
@@ -223,6 +272,46 @@ export default function RecipeDetailPage({
         description: "An unexpected error occurred while deleting the recipe.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError("");
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(
+        "http://localhost/server/php/recipes/api/upload.php",
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setRecipe((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            image_url: data.path,
+          };
+        });
+      } else {
+        setUploadError(data.error || "Failed to upload image");
+      }
+    } catch (error) {
+      setUploadError("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -474,13 +563,45 @@ export default function RecipeDetailPage({
 
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Image URL
+                  Recipe Image
                 </label>
-                <Input
-                  name="image_url"
-                  value={recipe.image_url}
-                  onChange={handleInputChange}
-                />
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      className="flex-1"
+                    />
+                    {isUploading && (
+                      <div className="text-sm text-muted-foreground">
+                        Uploading...
+                      </div>
+                    )}
+                  </div>
+                  {uploadError && (
+                    <div className="text-sm text-red-500">{uploadError}</div>
+                  )}
+                  {recipe.image_url && (
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                      <img
+                        src={recipe.image_url}
+                        alt="Recipe preview"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="text-sm text-muted-foreground">
+                    Or enter an image URL:
+                  </div>
+                  <Input
+                    name="image_url"
+                    value={recipe.image_url}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -586,48 +707,49 @@ export default function RecipeDetailPage({
                 />
                 {recipe.favourite === 1 ? "Favorited" : "Favorite"}
               </Button>
-              {currentUserId &&
+              {((currentUserId &&
                 recipe.user_id &&
-                currentUserId.toString() === recipe.user_id.toString() && (
-                  <>
-                    <AlertDialog
-                      open={isDeleteDialogOpen}
-                      onOpenChange={setIsDeleteDialogOpen}
-                    >
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          size="sm"
+                currentUserId.toString() === recipe.user_id.toString()) ||
+                isAdmin) && (
+                <>
+                  <AlertDialog
+                    open={isDeleteDialogOpen}
+                    onOpenChange={setIsDeleteDialogOpen}
+                  >
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-rose-500 hover:bg-rose-700"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete your recipe and remove all associated data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
                           className="bg-rose-500 hover:bg-rose-700"
+                          onClick={handleDelete}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete your recipe and remove all associated data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-rose-500 hover:bg-rose-700"
-                            onClick={handleDelete}
-                          >
-                            Delete Recipe
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    <Button size="sm" onClick={() => setIsEditing(true)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </>
-                )}
+                          Delete Recipe
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button size="sm" onClick={() => setIsEditing(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 

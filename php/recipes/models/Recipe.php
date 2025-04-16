@@ -194,6 +194,24 @@ class Recipe {
 
         $recipes = [];
         while ($row = $result->fetch_assoc()) {
+            // Convert numeric fields to integers
+            $row['cook_time'] = intval($row['cook_time']);
+            $row['prep_time'] = intval($row['prep_time']);
+            $row['servings'] = intval($row['servings']);
+            $row['recipe_id'] = intval($row['recipe_id']);
+            $row['user_id'] = intval($row['user_id']);
+            $row['is_deleted'] = intval($row['is_deleted']);
+            
+            // Convert image_url to full URL if it exists
+            if (!empty($row['image_url'])) {
+                // Check if the URL already starts with http:// or https://
+                if (!preg_match('/^https?:\/\//', $row['image_url'])) {
+                    // If it's a relative path starting with /images, add the base URL
+                    if (strpos($row['image_url'], '/images/') === 0) {
+                        $row['image_url'] = 'http://localhost:3000' . $row['image_url'];
+                    }
+                }
+            }
             $recipes[] = $row;
         }
 
