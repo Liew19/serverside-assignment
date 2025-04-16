@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Heart, Clock } from "lucide-react";
+import { Heart, Clock, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 interface Recipe {
@@ -19,9 +19,16 @@ interface Recipe {
 interface RecipeCardProps {
   recipe: Recipe;
   onFavourite: () => void;
+  isAdmin?: boolean;
+  onDelete?: () => void;
 }
 
-export function RecipeCard({ recipe, onFavourite }: RecipeCardProps) {
+export function RecipeCard({
+  recipe,
+  onFavourite,
+  isAdmin = false,
+  onDelete,
+}: RecipeCardProps) {
   const totalTime = Number(recipe.prep_time) + Number(recipe.cook_time);
 
   return (
@@ -90,9 +97,22 @@ export function RecipeCard({ recipe, onFavourite }: RecipeCardProps) {
             <Clock className="mr-1 h-4 w-4" />
             {totalTime} mins
           </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/recipes/${recipe.recipe_id}`}>View Recipe</Link>
-          </Button>
+          <div className="flex gap-2 items-center">
+            {isAdmin && onDelete && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onDelete();
+                }}
+                className="p-2 rounded-full bg-background hover:bg-background/90 transition-colors text-red-500"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/recipes/${recipe.recipe_id}`}>View Recipe</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </Card>

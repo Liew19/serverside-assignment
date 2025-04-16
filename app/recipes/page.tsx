@@ -67,6 +67,7 @@ export default function RecipesPage() {
   const [hasMore, setHasMore] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState<number | null>(null);
   const ITEMS_PER_PAGE = 12;
 
@@ -496,7 +497,7 @@ export default function RecipesPage() {
                   handleFavourite(recipe.recipe_id, recipe.favourite)
                 }
                 isAdmin={isAdmin}
-                onDelete={handleDeleteClick}
+                onDelete={() => handleDeleteClick(recipe.recipe_id)}
               />
             ))}
           </div>
@@ -517,7 +518,7 @@ export default function RecipesPage() {
                       handleFavourite(recipe.recipe_id, recipe.favourite)
                     }
                     isAdmin={isAdmin}
-                    onDelete={handleDeleteClick}
+                    onDelete={() => handleDeleteClick(recipe.recipe_id)}
                   />
                 ))
             ) : (
@@ -547,7 +548,7 @@ export default function RecipesPage() {
                       );
                     }}
                     isAdmin={isAdmin}
-                    onDelete={handleDeleteClick}
+                    onDelete={() => handleDeleteClick(recipe.recipe_id)}
                   />
                 ))
               ) : (
@@ -580,7 +581,7 @@ export default function RecipesPage() {
                       handleFavourite(recipe.recipe_id, recipe.favourite)
                     }
                     isAdmin={isAdmin}
-                    onDelete={handleDeleteClick}
+                    onDelete={() => handleDeleteClick(recipe.recipe_id)}
                   />
                 ))
             ) : (
