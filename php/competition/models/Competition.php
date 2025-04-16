@@ -192,22 +192,26 @@ class Competition
     //get all recipes in a competition
     //return entry_id, title, description, username, submission_date, and number of votes
     $sql = "SELECT 
-        ce.entry_id, 
-        r.title AS recipe_title, 
-        r.description AS recipe_description, 
-        u.username, 
-        ce.submission_date, 
-        COUNT(v.vote_id) AS number_of_votes
-        FROM 
+    ce.entry_id, 
+    ce.recipe_id,  -- Added the recipe_id column here
+    r.title AS recipe_title, 
+    r.description AS recipe_description, 
+    u.username, 
+    ce.submission_date, 
+    COUNT(v.vote_id) AS number_of_votes
+    FROM 
         competition_entries ce
-        JOIN recipes r ON ce.recipe_id = r.recipe_id
-        JOIN users u ON r.user_id = u.user_id
-        LEFT JOIN votes v ON v.entry_id = ce.entry_id
-        WHERE 
-        ce.competition_id = ? 
+    JOIN recipes r ON ce.recipe_id = r.recipe_id
+    JOIN users u ON r.user_id = u.user_id
+    LEFT JOIN votes v ON v.entry_id = ce.entry_id
+    WHERE 
+        ce.competition_id = ?
         AND ce.is_deleted = 0 
-        GROUP BY ce.entry_id
-        ORDER BY ce.submission_date DESC;";
+    GROUP BY 
+        ce.entry_id
+    ORDER BY 
+        ce.submission_date DESC;
+    ;";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
       die("Failed to prepare statement: " . mysqli_error($conn));
