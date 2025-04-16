@@ -48,6 +48,7 @@ export default function CompetitionDetailPage({
 
   interface Entry {
     entry_id: string
+    recipe_id: string
     title: string
     description: string
     username: string
@@ -242,6 +243,7 @@ export default function CompetitionDetailPage({
         if (entriesData.data) {
           const formattedEntries = entriesData.data.map((entry: any) => ({
             entry_id: entry.entry_id,
+            recipe_id: entry.recipe_id,
             title: entry.recipe_title,
             description: entry.recipe_description,
             username: entry.username,
@@ -530,7 +532,7 @@ export default function CompetitionDetailPage({
                       </div>
                       <div className="flex justify-end mt-2">
                         <Button variant="ghost" size="sm">
-                          View Details
+                          <Link href={`/recipes/${entry.recipe_id}`}> View Details </Link>
                         </Button>
                       </div>
                     </div>
