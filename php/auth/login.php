@@ -9,7 +9,7 @@ require_once "../users/User.php";
 
 
 session_start();
-$conn = new mysqli("localhost", "root", "", "recipe_management");
+$conn = new mysqli("localhost", "root", "", "recipe_database");
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'login') {
   $email = $_POST['email'];
   $password = $_POST['password'];

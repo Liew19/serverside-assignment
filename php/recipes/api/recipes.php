@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 session_start();
 
 // Create database connection with required parameters
-$conn = new mysqli("localhost", "root", "", "recipe_management");
+$conn = new mysqli("localhost", "root", "", "recipe_database");
 
 // Check database connection
 if ($conn->connect_error) {

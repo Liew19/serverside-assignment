@@ -5,7 +5,7 @@ class Recipe {
     private $table = 'recipes';
 
     public function __construct() {
-        $this->conn = new mysqli("localhost", "root", "", "recipe_management");
+        $this->conn = new mysqli("localhost", "root", "", "recipe_database");
         if ($this->conn->connect_error) {
             die("Connection failed: " . $this->conn->connect_error);
         }

@@ -8,7 +8,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, Cache-Control
 require_once "../users/User.php";
 
 session_start();
-$conn = new mysqli("localhost", "root", "", "recipe_management");
+$conn = new mysqli("localhost", "root", "", "recipe_database");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'register') {
   $username = $_POST['username'];
