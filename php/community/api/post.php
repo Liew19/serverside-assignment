@@ -150,6 +150,21 @@ if ($method === 'PUT' && $action === 'update_post') {
   exit();
 }
 
+if ($_GET['action'] === 'getPostById' && isset($_GET['postId'])) {
+  $postId = (int) $_GET['postId'];
+  error_log("Post ID received: " . $postId);
+
+  $result = Post::getPostById($postId, $database);
+  if ($result) {
+    http_response_code(200);
+    echo json_encode(['message' => 'Post fetched successfully', 'data' => $result]);
+  } else {
+    http_response_code(404);
+    echo json_encode(['message' => 'Post not found']);
+  }
+  exit();
+}
+
 // Catch-all for unsupported methods/actions
 http_response_code(400);
 echo json_encode(['message' => 'Invalid request method or action']);

@@ -1,67 +1,58 @@
-//<?php
-// require_once __DIR__ .  '/../database/database.php';
-// header('Content-Type: application/json');
+<?php
+header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 
-// $method = $_SERVER['REQUEST_METHOD'];
+require_once __DIR__ . '/../../database/database.php';
+require_once '../models/comment.php';
+require_once '../../users/User.php';
 
-// if ($method === 'POST') {
-//   // ADD COMMENT
-//   $postId = $_POST['post_id'] ?? null;
-//   $userId = $_POST['user_id'] ?? null;
-//   $content = $_POST['content'] ?? null;
-//   $parentId = $_POST['parent_id'] ?? null;
+session_start();
 
-//   if (!$postId || !$userId || !$content) {
-//     echo json_encode(['error' => 'Missing required fields']);
-//     exit;
-//   }
+$database = new Database("localhost", "root", "", "database");
+$conn = $database->conn;
 
-//   $stmt = $db->prepare("INSERT INTO comments (post_id, user_id, content, parent_id, created_at) VALUES (?, ?, ?, ?, NOW())");
-//   $stmt->bind_param("iisi", $postId, $userId, $content, $parentId);
-//   if ($stmt->execute()) {
-//     echo json_encode(['success' => true, 'comment_id' => $stmt->insert_id]);
-//   } else {
-//     echo json_encode(['error' => 'Failed to add comment']);
-//   }
-//   $stmt->close();
+if (!$conn) {
+  http_response_code(500);
+  echo json_encode(['message' => 'Failed to connect to database']);
+  exit;
+}
 
-// } elseif ($method === 'GET') {
-//   // GET COMMENTS
-//   $postId = $_GET['post_id'] ?? null;
-//   if (!$postId) {
-//     echo json_encode(['error' => 'Missing post_id']);
-//     exit;
-//   }
+$action = $_GET['action'] ?? null;
 
-//   $stmt = $db->prepare("SELECT c.*, u.username, u.avatar FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? AND c.parent_id IS NULL ORDER BY c.created_at DESC");
-//   $stmt->bind_param("i", $postId);
-//   $stmt->execute();
-//   $result = $stmt->get_result();
-//   $comments = [];
+if ($action === 'getComments' && isset($_GET['postId'])) {
+  $postId = intval($_GET['postId']);
+  $comments = Comment::getCommentsByPostId($postId, $database);
+  echo json_encode(['message' => 'Comments fetched successfully', 'data' => $comments]);
+  exit;
+}
 
-//   while ($row = $result->fetch_assoc()) {
-//     $commentId = $row['id'];
+if ($action === 'addComment' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+  $input = json_decode(file_get_contents("php://input"), true);
 
-//     // Fetch replies
-//     $replyStmt = $db->prepare("SELECT c.*, u.username, u.avatar FROM comments c JOIN users u ON c.user_id = u.id WHERE c.parent_id = ? ORDER BY c.created_at ASC");
-//     $replyStmt->bind_param("i", $commentId);
-//     $replyStmt->execute();
-//     $replyResult = $replyStmt->get_result();
-//     $replies = [];
-//     while ($reply = $replyResult->fetch_assoc()) {
-//       $replies[] = $reply;
-//     }
-//     $replyStmt->close();
+  if (!isset($input['postId']) || !isset($input['content'])) {
+    http_response_code(400);
+    echo json_encode(['message' => 'Missing required fields']);
+    exit;
+  }
 
-//     $row['replies'] = $replies;
-//     $comments[] = $row;
-//   }
+  $postId = intval($input['postId']);
+  $content = trim($input['content']);
 
-//   echo json_encode($comments);
-//   $stmt->close();
+  // Simulate session user
+  $userId = $_SESSION['user_id'] ?? 1;
+  $userName = $_SESSION['user_name'] ?? 'Anonymous';
 
-// } else {
-//   echo json_encode(['error' => 'Invalid request method']);
-// }
+  $success = Comment::addComment($postId, $userId, $userName, $content, $database);
 
-//$db->close();
+  if ($success) {
+    echo json_encode(['message' => 'Comment added successfully']);
+  } else {
+    http_response_code(500);
+    echo json_encode(['message' => 'Failed to add comment']);
+  }
+  exit;
+}
+
+http_response_code(400);
+echo json_encode(['message' => 'Invalid request']);
