@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 session_start();
-$conn = new mysqli("localhost", "root", "", "recipe_management");
+$conn = new mysqli("localhost", "root", "", "recipe_database");
 if ($conn->connect_error) {
     http_response_code(500);
     echo json_encode(['message' => 'Failed to connect to database: ' . $conn->connect_error]);
