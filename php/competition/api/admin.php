@@ -13,16 +13,16 @@ $conn = new mysqli("localhost", "root", "password", "database_test2");
 
 $headers = getallheaders();
 
-// if (!isset($_SESSION['user_id'])) {
-//   http_response_code(401);
-//   echo json_encode(['message' => 'user not authenticated']);
-//   exit();
-// }
-// if ($_SESSION['role'] != 'admin') {
-//   http_response_code(401);
-//   echo json_encode(['message' => 'Not admin user, access denied']);
-//   exit();
-// }
+if (!isset($_SESSION['user_id'])) {
+  http_response_code(401);
+  echo json_encode(['message' => 'user not authenticated']);
+  exit();
+}
+if ($_SESSION['role'] != 'admin') {   //check sessios for admin is enough, since only one admin and stored in server, no need check for user id also 
+  http_response_code(401);
+  echo json_encode(['message' => 'Not admin user, access denied']);
+  exit();
+}
 
 //Create Competition by admin 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_competition') {

@@ -14,31 +14,38 @@ session_start();
 $conn = new mysqli("localhost", "root", "password", "database_test2");
 
 
-//check user status, if cookie correct with session (user id)
+if (!isset($_SESSION['user_id'])) {
+  http_response_code(401);
+  echo json_encode(['status' => 'No session']);
+  exit();
+}
+if (!isset($_COOKIE['user_id'])) {
+  http_response_code(401);
+  echo json_encode(['status' => false]);
+  exit();
+}
+if ($_COOKIE['user_id'] != $_SESSION['user_id']) {   //if session part exists cannot test with postman, close if want to debug
+  // session_destroy();
+  // setcookie('user_id', '');
+  http_response_code(401);
+  echo json_encode(['status' => "fake cookie"]);
+  exit();
+}
+
+//send to front-end admin status by fetching in useEffect
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_status') {
-
-  if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['status' => 'No session']);
-    exit();
-  }
-
-  $userID = $_POST['user_id'] ?? null;
-  $admin = User::checkRole($userID, $conn);
-
-  if ($userID && $userID == $_SESSION['user_id']) {
+  $userID = $_COOKIE['user_id'];
+  $admin = User::checkRole($userID, $conn);   //admin boolean, if return true is admin, check user admin status in backend to prevent impersonating, return to front-end as props to render admin-only components
+  if ($admin) {
     http_response_code(200);
-    if ($admin) {
-      echo json_encode(["status" => true, "admin" => true]);
-    } else {
-      echo json_encode(["status" => true, "admin" => false]);
-    }
+    echo json_encode(["status" => true, "admin" => true]);  //for front end usage
   } else {
-    http_response_code(401);
-    echo json_encode(['status' => 'Failed authentication']);
+    http_response_code(200);
+    echo json_encode(["status" => true, "admin" => false]);
   }
 }
 
+//get all competitions, render in competition main page
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_all_competitions') {
   $result = Competition::getAllCompetitions($conn);
   if ($result) {
@@ -50,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
   }
 }
 
-//get number of entries in competition //done
+//get number of entries in competition(show number of entries in competition/[id] page)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_entries') {
   $competition_id = $_GET['competition_id'];
   $result = Competition::getEntriesNum($competition_id, $conn);
@@ -59,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     echo json_encode(['num_entries' => $result]);
   } else {
     http_response_code(500);
-    echo json_encode(['message' => 'Failed to fetch competitions']);
+    echo json_encode(['message' => 'Failed to fetch competition entries']);
   }
 }
 

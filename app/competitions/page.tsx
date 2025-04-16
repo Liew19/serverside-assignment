@@ -53,28 +53,17 @@ const user_id = getCookie('user_id');
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [admin, setAdmin] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Fetch competitions
-        const compRes = await fetch(`http://localhost/server/php/competition/api/user.php?action=get_all_competitions`, {
-          credentials: "include",
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        });
-        const compData = await compRes.json();
-        console.log("Fetched competitions:", compData);
-        setCompetitions(compData.data);
-  
         // 2. Check status
         if (!user_id) {
           console.warn("No user_id found in cookie or state.");
+          router.push("/");
           return;
         }
-  
         const statusRes = await fetch(`http://localhost/server/php/competition/api/user.php`, {
           credentials: "include",
           method: "POST",
@@ -86,9 +75,13 @@ export default function CompetitionsPage() {
             user_id: user_id.toString()
           }).toString(),
         });
-  
+        console.log("status response", statusRes);
         const status = await statusRes.json();
-        console.log("status", status);
+        if (status.status == 'fake cookie') {
+          console.log("fake cookie");
+          router.push("/logout");
+          return;
+        }
   
         if (status.status === true) {
           setAdmin(status.admin === true);
@@ -96,6 +89,18 @@ export default function CompetitionsPage() {
         } else {
           setAdmin(false);
         }
+
+        // then Fetch competitions
+        const compRes = await fetch(`http://localhost/server/php/competition/api/user.php?action=get_all_competitions`, {
+          credentials: "include",
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        });
+        const compData = await compRes.json();
+        console.log("Fetched competitions:", compData);
+        setCompetitions(compData.data);
       } catch (error) {
         console.error("Error in useEffect:", error);
       }
@@ -185,31 +190,16 @@ export default function CompetitionsPage() {
 }
 
 
-function CompetitionCard({ competition }: { competition: Competition }) {
-  const router = useRouter();
-  
-  
+function CompetitionCard({ competition }: { competition: Competition }) {  
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-video bg-primary/10 relative">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Trophy className="h-12 w-12 text-primary/40" />
-        </div>
-        {competition.prize && (
-          <div className="absolute top-3 right-3">
-            <div className="bg-background/80 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
-            Prize RM{competition.prize} 
-            </div>
-          </div>
-        )}
-      </div>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-5">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">
-          <Link
-            href={`/competitions/${competition.competition_id}?user_id=${user_id}`}
-            className="hover:text-primary transition-colors"
-          >
+            <Link
+              href={`/competitions/${competition.competition_id}?user_id=${user_id}`}
+              className="hover:text-primary transition-colors"
+            >
               {competition.title}
             </Link>
           </CardTitle>
@@ -238,7 +228,6 @@ function CompetitionCard({ competition }: { competition: Competition }) {
           {competition.description}
         </p>
         <div className="flex flex-col gap-2 text-sm">
-
           {competition.status === "active" && (
             <div className="flex items-center">
               <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
