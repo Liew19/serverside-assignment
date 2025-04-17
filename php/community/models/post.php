@@ -110,5 +110,49 @@ class Post
         $result = $stmt->get_result();
         return $result->fetch_assoc()["count"];
     }
+
+    public static function getUserPosts($userId, $db) {
+        $stmt = $db->conn->prepare("SELECT * FROM user_post WHERE user_id = ? AND isDeleted = 0 ORDER BY created_at DESC");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    
+    public static function getPopularPosts($database) {
+        $conn = $database->conn;
+    
+        $query = "
+            SELECT 
+                p.*, 
+                COUNT(l.post_id) AS likesCount
+            FROM 
+                user_post p
+            LEFT JOIN 
+                likes l ON p.post_id = l.post_id
+            WHERE 
+                p.isDeleted = 0
+            GROUP BY 
+                p.post_id
+            ORDER BY 
+                likesCount DESC, p.created_at DESC
+        ";
+    
+        $result = $conn->query($query);
+    
+        if (!$result) {
+            error_log("Query Error: " . mysqli_error($conn));
+            return false;
+        }
+    
+        $posts = [];
+        while ($row = $result->fetch_assoc()) {
+            $posts[] = $row;
+        }
+    
+        return $posts;
+    }
+    
 }
 ?>
