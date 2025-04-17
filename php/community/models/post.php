@@ -94,5 +94,21 @@ class Post
             return 1;
         }
     }
+
+    public static function getLikeCount($postId, $db) {
+        $stmt = $db->conn->prepare("SELECT COUNT(*) as count FROM likes WHERE post_id = ?");
+        $stmt->bind_param("i", $postId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc()["count"];
+    }
+    
+    public static function getCommentCount($postId, $db) {
+        $stmt = $db->conn->prepare("SELECT COUNT(*) as count FROM comments WHERE post_id = ? AND isDeleted = 0");
+        $stmt->bind_param("i", $postId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc()["count"];
+    }
 }
 ?>

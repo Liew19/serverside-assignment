@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ .  '/../database/database.php';
 require_once '../models/post.php';
 require_once '../../users/User.php';
+require_once '../models/like.php'; 
+require_once '../models/comment.php';
 
 session_start();
 $database = new Database("localhost", "root", "", "database");
@@ -57,7 +59,14 @@ if ($method === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check
 
 if ($method === 'GET' && $action === 'getAllPosts') {
   $result = Post::getAllPosts($database);
+
   if ($result) {
+    foreach ($result as &$post) {
+      $postId = $post['post_id'];
+      $post['likesCount'] = Post::getLikeCount($postId, $database);
+      $post['commentsCount'] = Post::getCommentCount($postId, $database);
+    }
+
     http_response_code(200);
     echo json_encode(['message' => 'Posts fetched successfully', 'data' => $result]);
   } else {
@@ -66,6 +75,7 @@ if ($method === 'GET' && $action === 'getAllPosts') {
   }
   exit();
 }
+
 
 if ($method === 'POST' && $action === 'createPost') {
   file_put_contents("php://stderr", "Inside createPost handler\n");
