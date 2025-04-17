@@ -387,7 +387,7 @@ export default function CompetitionDetailPage({
           </Link>
         </Button>
 
-        {competition.status === "active" && admin && (
+        {(competition.status === "active" || competition.status === "upcoming") && admin && (
           <div className="flex gap-2">
             <Button
               onClick={() => setShowEditDialog(true)}
@@ -395,12 +395,14 @@ export default function CompetitionDetailPage({
             >
               Edit Competition
             </Button>
-            <Button
-              onClick={() => setShowEndCompetitionDialog(true)}
-              variant="destructive"
-            >
-              Mark competition as ended
-            </Button>
+            {competition.status === "active" && (
+              <Button
+                onClick={() => setShowEndCompetitionDialog(true)}
+                variant="destructive"
+              >
+                Mark competition as ended
+              </Button>
+            )}
           </div>
         )}
       </div>
