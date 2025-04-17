@@ -12,13 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   exit();
 }
 
-require_once __DIR__ .  '/../database/database.php';
+session_start();
+require_once __DIR__ . '/../../database/database.php';
 require_once '../models/post.php';
 require_once '../../users/User.php';
-require_once '../models/like.php'; 
+require_once '../models/like.php';
 require_once '../models/comment.php';
 
-session_start();
 $database = new Database("localhost", "root", "", "database");
 if (!$database->conn) {
   http_response_code(500);
@@ -29,11 +29,10 @@ if (!$database->conn) {
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_REQUEST['action'] ?? '';
 
-file_put_contents("php://stderr", "METHOD: $method, ACTION: $action\n");
 error_log("METHOD: $method, ACTION: $action");
 
-//check user status, if cookie correct with session (user id)
-if ($method === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_status') {
+// ========== AUTH CHECK ==========
+if ($method === 'POST' && $action === 'check_status') {
   if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['status' => 'No session']);
@@ -45,11 +44,7 @@ if ($method === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check
 
   if ($userID && $userID == $_SESSION['user_id']) {
     http_response_code(200);
-    if ($admin) {
-      echo json_encode(["status" => true, "admin" => true]);
-    } else {
-      echo json_encode(["status" => true, "admin" => false]);
-    }
+    echo json_encode(["status" => true, "admin" => $admin]);
   } else {
     http_response_code(401);
     echo json_encode(['status' => 'Failed authentication']);
@@ -57,40 +52,12 @@ if ($method === 'POST' && isset($_POST['action']) && $_POST['action'] === 'check
   exit();
 }
 
-if ($method === 'GET' && $action === 'getAllPosts') {
-  $result = Post::getAllPosts($database);
-
-  if ($result) {
-    foreach ($result as &$post) {
-      $postId = $post['post_id'];
-      $post['likesCount'] = Post::getLikeCount($postId, $database);
-      $post['commentsCount'] = Post::getCommentCount($postId, $database);
-    }
-
-    http_response_code(200);
-    echo json_encode(['message' => 'Posts fetched successfully', 'data' => $result]);
-  } else {
-    http_response_code(500);
-    echo json_encode(['message' => 'Failed to fetch posts']);
-  }
-  exit();
-}
-
-
+// ========== CREATE POST ==========
 if ($method === 'POST' && $action === 'createPost') {
-  file_put_contents("php://stderr", "Inside createPost handler\n");
-
   $title = $_POST['title'] ?? '';
   $content = $_POST['content'] ?? '';
-  $userId = $_POST['user_id'] ?? ($_SESSION['user_id'] ?? null);
+  $userId = $_POST['user_id'] ?? ($_SESSION['user_id'] ?? 1); // Dummy fallback
   $imageURL = '';
-
-  // if (!$userId) {
-  //   http_response_code(401);
-  //   echo json_encode(['message' => 'Unauthorized: Missing user ID']);
-  //   exit();
-  // }
-  $userId = $_POST['user_id'] ?? 1; // use dummy user ID = 1
 
   if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $uploadDir = '../../uploads/';
@@ -112,12 +79,8 @@ if ($method === 'POST' && $action === 'createPost') {
   }
   exit();
 }
-else if ($method === 'POST' && $action !== 'createPost' && $action !== 'check_status') {
-  http_response_code(400);
-  echo json_encode(['message' => 'Invalid action for POST request']);
-  exit();
-}
 
+// ========== DELETE POST ==========
 if ($method === 'DELETE' && $action === 'delete_post') {
   $postId = $_GET['id'] ?? null;
   if (!$postId) {
@@ -137,6 +100,7 @@ if ($method === 'DELETE' && $action === 'delete_post') {
   exit();
 }
 
+// ========== UPDATE POST ==========
 if ($method === 'PUT' && $action === 'update_post') {
   parse_str(file_get_contents("php://input"), $put_vars);
   $postId = $put_vars['post_id'] ?? null;
@@ -160,48 +124,90 @@ if ($method === 'PUT' && $action === 'update_post') {
   exit();
 }
 
-// if ($_GET['action'] === 'getPostById' && isset($_GET['postId'])) {
-//   $postId = (int) $_GET['postId'];
-//   error_log("Post ID received: " . $postId);
-
-//   $result = Post::getPostById($postId, $database);
-//   if ($result) {
-//     http_response_code(200);
-//     echo json_encode(['message' => 'Post fetched successfully', 'data' => $result]);
-//   } else {
-//     http_response_code(404);
-//     echo json_encode(['message' => 'Post not found']);
-//   }
-//   exit();
-// }
-
-if ($_GET['action'] === 'getPostById' && isset($_GET['postId'])) {
-  session_start();
+// ========== GET POST BY ID ==========
+if ($method === 'GET' && $action === 'getPostById' && isset($_GET['postId'])) {
   $postId = (int) $_GET['postId'];
   $userId = $_SESSION['user_id'] ?? 1;
 
-  require_once __DIR__ . '/../models/LikeModel.php';
   $likeModel = new LikeModel();
-
-  error_log("Post ID received: " . $postId);
   $result = Post::getPostById($postId, $database);
 
   if ($result) {
-      // Add like count and whether user liked it
-      $result['like_count'] = $likeModel->getLikeCount($postId);
-      $result['liked_by_user'] = $likeModel->getLikeStatus($postId, $userId);
+    $result['like_count'] = $likeModel->getLikeCount($postId);
+    $result['liked_by_user'] = $likeModel->getLikeStatus($postId, $userId);
 
-      http_response_code(200);
-      echo json_encode(['message' => 'Post fetched successfully', 'data' => $result]);
+    http_response_code(200);
+    echo json_encode(['message' => 'Post fetched successfully', 'data' => $result]);
   } else {
-      http_response_code(404);
-      echo json_encode(['message' => 'Post not found']);
+    http_response_code(404);
+    echo json_encode(['message' => 'Post not found']);
   }
   exit();
 }
 
+// ========== SWITCH FOR GET ACTIONS ==========
+if ($method === 'GET') {
+  switch ($action) {
+    case 'getAllPosts':
+      $result = Post::getAllPosts($database);
+      foreach ($result as &$post) {
+        $postId = $post['post_id'];
+        $post['likesCount'] = Post::getLikeCount($postId, $database);
+        $post['commentsCount'] = Post::getCommentCount($postId, $database);
+      }
+      http_response_code(200);
+      echo json_encode(['message' => 'Posts fetched successfully', 'data' => $result]);
+      break;
 
-// Catch-all for unsupported methods/actions
+    case 'getUserPosts':
+      $userId = $_GET['userId'] ?? null;
+      if (!$userId) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Missing userId']);
+        break;
+      }
+      $posts = Post::getUserPosts($userId, $database);
+      foreach ($posts as &$post) {
+        $postId = $post['post_id'];
+        $post['likesCount'] = Post::getLikeCount($postId, $database);
+        $post['commentsCount'] = Post::getCommentCount($postId, $database);
+      }
+      http_response_code(200);
+      echo json_encode(['message' => 'User posts fetched successfully', 'data' => $posts]);
+      break;
+
+    case 'getLatestPosts':
+      $result = Post::getAllPosts($database);
+      foreach ($result as &$post) {
+        $postId = $post['post_id'];
+        $post['likesCount'] = Post::getLikeCount($postId, $database);
+        $post['commentsCount'] = Post::getCommentCount($postId, $database);
+      }
+      http_response_code(200);
+      echo json_encode(['message' => 'Posts fetched successfully', 'data' => $result]);
+      break;
+
+      case 'getPopularPosts':
+        $result = Post::getPopularPosts($database);
+    
+        foreach ($result as &$post) {
+            $postId = $post['post_id'];
+            $post['commentsCount'] = Post::getCommentCount($postId, $database);
+        }
+    
+        http_response_code(200);
+        echo json_encode(['message' => 'Popular posts fetched successfully', 'data' => $result]);
+        break;
+    
+
+    default:
+      http_response_code(400);
+      echo json_encode(['message' => 'Invalid action for GET request']);
+  }
+  exit();
+}
+
+// ========== INVALID FALLBACK ==========
 http_response_code(400);
 echo json_encode(['message' => 'Invalid request method or action']);
 exit();
