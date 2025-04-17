@@ -141,14 +141,14 @@ export default function RootLayout({
                   >
                     Recipes
                   </Link>
-                  {isLoggedIn && (
-                    <>
-                      <Link
+                  <Link
                         href="/meal-planning"
                         className="text-sm font-medium hover:text-primary transition-colors"
                       >
                         Meal Planning
                       </Link>
+                  {isLoggedIn && (
+                    <>
                       <Link
                         href="/community"
                         className="text-sm font-medium hover:text-primary transition-colors"
