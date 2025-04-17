@@ -58,16 +58,20 @@ class User
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     if (!$stmt) {
-      die("Prepare error" . $conn->error);
+      die("Prepare error: " . $conn->error);
     }
     $result = $stmt->get_result();
     if (!$result) {
-      die("Query Error:" . mysqli_error($conn));
+      die("Query Error: " . mysqli_error($conn));
     }
     if ($result->num_rows == 0) {
-      return false;   //if no user found return false
+      return false;  //If no records are found, return false
     }
-    return $result->fetch_assoc();
+    $recipes = [];
+    while ($row = $result->fetch_assoc()) {
+      $recipes[] = $row;
+    }
+    return $recipes;  
   }
 
   public static function checkRole($user_id, $conn)
