@@ -101,15 +101,14 @@ if ($method === 'DELETE' && $action === 'delete_post') {
 }
 
 // ========== UPDATE POST ==========
-if ($method === 'PUT' && $action === 'update_post') {
-  parse_str(file_get_contents("php://input"), $put_vars);
-  $postId = $put_vars['post_id'] ?? null;
-  $title = $put_vars['title'] ?? '';
-  $content = $put_vars['content'] ?? '';
+if ($method === 'POST' && $action === 'update_post') {
+  $postId = $_POST['post_id'] ?? null;
+  $title = $_POST['title'] ?? '';
+  $content = $_POST['content'] ?? '';
 
   if (!$postId) {
     http_response_code(400);
-    echo json_encode(['message' => 'Post ID is required']);
+    echo json_encode(['success' => false, 'message' => 'Post ID is required']);
     exit();
   }
 
@@ -123,6 +122,7 @@ if ($method === 'PUT' && $action === 'update_post') {
   }
   exit();
 }
+
 
 // ========== GET POST BY ID ==========
 if ($method === 'GET' && $action === 'getPostById' && isset($_GET['postId'])) {
