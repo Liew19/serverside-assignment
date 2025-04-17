@@ -65,5 +65,27 @@ if ($action === 'addComment' && $_SERVER['REQUEST_METHOD'] === 'POST') {
   exit;
 }
 
+if ($action === 'deleteComment' && $_SERVER['REQUEST_METHOD'] === 'DELETE') {
+  $input = json_decode(file_get_contents("php://input"), true);
+
+  if (!isset($input['commentId'])) {
+    http_response_code(400);
+    echo json_encode(['message' => 'Missing required fields']);
+    exit;
+  }
+
+  $commentId = intval($input['commentId']);
+  
+  $success = Comment::deleteComment($commentId, $database);
+
+  if ($success) {
+    echo json_encode(['message' => 'Comment deleted successfully']);
+  } else {
+    http_response_code(500);
+    echo json_encode(['message' => 'Failed to delete comment']);
+  }
+  exit;
+}
+
 http_response_code(400);
 echo json_encode(['message' => 'Invalid request']);
