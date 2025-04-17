@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { ArrowLeft, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
@@ -30,22 +30,19 @@ export default function EditPost() {
 
   useEffect(() => {
     // Fetch current user
-    const fetchCurrentUser = async () => {
-      try {
-        // In a real app, this would come from your auth system
-        const userId = localStorage.getItem("userId");
-        setCurrentUserId(userId ? parseInt(userId) : null);
-      } catch (err) {
-        console.error("Error fetching current user:", err);
-      }
+    const fetchCurrentUser = () => {
+      const userId = localStorage.getItem("userId");
+      setCurrentUserId(userId ? parseInt(userId) : null);
     };
 
     // Fetch post details
     const fetchPostDetails = async () => {
       try {
-        const res = await fetch(`http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=getPostById&postId=${postId}`);
+        const res = await fetch(
+          `http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=getPostById&postId=${postId}`
+        );
         const data = await res.json();
-        
+
         if (data.data) {
           setPost(data.data);
           setTitle(data.data.title);
@@ -55,7 +52,7 @@ export default function EditPost() {
           setError("Post not found");
         }
       } catch (err) {
-        console.error("Error fetching post details:", err);
+        console.error("Error fetching post:", err);
         setError("Failed to load post");
       } finally {
         setLoading(false);
@@ -72,53 +69,63 @@ export default function EditPost() {
     }
   };
 
+  // Clear error when form changes
+  useEffect(() => {
+    if (error) {
+      setError("");
+    }
+  }, [title, content]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!post || !currentUserId) return;
-    
-    // Validate user is the owner
+
+    // Ownership validation
     if (post.userId !== currentUserId) {
       setError("You don't have permission to edit this post");
       return;
     }
-    
-    // Validate form
+
+    // Input validation
     if (!title.trim() || !content.trim()) {
       setError("Title and content are required");
       return;
     }
-    
+
     setSubmitting(true);
-    
+
     try {
-      // Create form data for file upload
       const formData = new FormData();
       formData.append("action", "updatePost");
       formData.append("postId", postId.toString());
       formData.append("userId", currentUserId.toString());
       formData.append("title", title);
       formData.append("content", content);
-      
+
       if (image) {
         formData.append("image", image);
+      } else {
+        formData.append("keepImage", "true"); // Optional flag for backend
       }
-      
-      const res = await fetch("http://localhost/serverass/serverside-assignment/php/community/api/post.php", {
-        method: "POST",
-        body: formData
-      });
-      
+
+      const res = await fetch(
+        "http://localhost/serverass/serverside-assignment/php/community/api/post.php",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
       const data = await res.json();
-      
+
       if (data.success) {
-        // Redirect to post detail page
         router.push(`/community/post/${postId}`);
       } else {
         setError(data.message || "Failed to update post");
       }
     } catch (err) {
-      console.error("Error updating post:", err);
+      console.error("Update error:", err);
       setError("An error occurred while updating the post");
     } finally {
       setSubmitting(false);
@@ -145,12 +152,13 @@ export default function EditPost() {
     );
   }
 
-  // Check if user is the owner
   if (post && currentUserId !== post.userId) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
-          <p className="text-red-500">You don't have permission to edit this post</p>
+          <p className="text-red-500">
+            You don't have permission to edit this post
+          </p>
         </div>
       </div>
     );
@@ -170,13 +178,13 @@ export default function EditPost() {
       <main>
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl font-bold mb-6">Edit Post</h1>
-          
+
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="title" className="block text-sm font-medium mb-1">
@@ -191,9 +199,12 @@ export default function EditPost() {
                 required
               />
             </div>
-            
+
             <div className="mb-4">
-              <label htmlFor="content" className="block text-sm font-medium mb-1">
+              <label
+                htmlFor="content"
+                className="block text-sm font-medium mb-1"
+              >
                 Content
               </label>
               <textarea
@@ -204,13 +215,13 @@ export default function EditPost() {
                 required
               />
             </div>
-            
+
             <div className="mb-6">
               <label className="block text-sm font-medium mb-1">
                 Image (Optional)
               </label>
-              
-              {currentImage && (
+
+              {currentImage && !image && (
                 <div className="mb-2">
                   <p className="text-sm mb-1">Current image:</p>
                   <img
@@ -220,7 +231,18 @@ export default function EditPost() {
                   />
                 </div>
               )}
-              
+
+              {image && (
+                <div className="mb-2">
+                  <p className="text-sm mb-1">New image preview:</p>
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt="Preview"
+                    className="h-40 object-cover rounded-md"
+                  />
+                </div>
+              )}
+
               <div className="mt-2">
                 <label className="cursor-pointer flex items-center gap-2 border rounded-md p-3 hover:bg-gray-50">
                   <ImageIcon className="h-5 w-5 text-gray-500" />
@@ -234,7 +256,7 @@ export default function EditPost() {
                 </label>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-2">
               <Button
                 type="button"
@@ -243,8 +265,8 @@ export default function EditPost() {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={submitting}
                 className="bg-orange-500 hover:bg-orange-600"
               >
