@@ -176,21 +176,7 @@ export default function CompetitionDetailPage({
         })
         const recipeData = await checkUserRecipeResponse.json();
         console.log("user recipe", recipeData);
-        if (recipeData && recipeData.status === "success" && Array.isArray(recipeData.data)) {
-          setUserRecipes(recipeData.data.map((recipe: any) => ({
-            recipe_id: recipe.recipe_id,
-            title: recipe.title
-          })));
-        } else if (recipeData && recipeData.data && !Array.isArray(recipeData.data)) {
-          // Handle case where data might be a single object instead of array
-          setUserRecipes([{
-            recipe_id: recipeData.data.recipe_id,
-            title: recipeData.data.title
-          }]);
-        } else {
-          console.log("No recipes found or unexpected data structure", recipeData);
-          setUserRecipes([]);
-        }
+        setUserRecipes(recipeData.data);
         
         console.log("competition data", competitionData);
         //fetch winner is past competition is used
