@@ -480,7 +480,7 @@ export default function CompetitionDetailPage({
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          {admin && (
+                          {admin && competition.status !== "past" && (
                             <Button 
                               variant="ghost" 
                               size="sm" 
