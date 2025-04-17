@@ -68,10 +68,10 @@ function CommunityFeed() {
     const fetchPosts = async () => {
       try {
         const res = await fetch("http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=getAllPosts")
-        const text = await res.text();  // Get the raw text response
+        const text = await res.text();  
         console.log("Raw Response:", text);
         
-        const data = JSON.parse(text); // Manually parse the JSON
+        const data = JSON.parse(text); 
         console.log("Fetched Posts:", data);
     
         if (data.data) {
@@ -82,10 +82,10 @@ function CommunityFeed() {
       } catch (err) {
         console.error("Error fetching posts:", err);
       } finally {
-        setLoading(false); // Ensure loading state is set to false when fetching is complete
+        setLoading(false); 
       }
     }
-    fetchPosts(); // You need to call the function here to trigger the fetch operation
+    fetchPosts(); 
   }, [])
 
   if (loading) {
