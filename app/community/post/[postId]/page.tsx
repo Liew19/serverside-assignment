@@ -23,9 +23,11 @@ interface Post {
 }
 
 interface Comment {
+  comment_id: number;
   username: string;
   comment: string;
   created_at: string;
+  user_id: number;
 }
 
 export default function PostDetail() {
@@ -33,6 +35,7 @@ export default function PostDetail() {
   const postId = params.postId;
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -176,6 +179,63 @@ export default function PostDetail() {
     }
   };
 
+  const handleDeletePost = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this post?");
+    if (!confirmDelete) return;
+  
+    try {
+      const res = await fetch(
+        `http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=delete_post&id=${postId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+  
+      const data = await res.json();
+  
+      if (data.message === "Post deleted successfully") {
+        setShowSuccess(true);
+        setTimeout(() => {
+          window.location.href = "/community"; 
+        }, 3000);
+      } else {
+        alert(data.message || "Failed to delete post");
+      }
+    } catch (err) {
+      console.error("Error deleting post:", err);
+      alert("An error occurred while deleting the post.");
+    }
+  };  
+
+  const handleDeleteComment = async (commentId: number) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this comment?");
+    if (!confirmDelete) return;
+  
+    try {
+      const res = await fetch(
+        `http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=deleteComment&commentId=${commentId}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      
+      if (data.success) {
+        setComments((prevComments) =>
+          prevComments.filter((comment) => comment.comment_id !== commentId)
+        );
+      } else {
+        alert(data.message || "Failed to delete comment");
+      }
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+      alert("An error occurred while deleting the comment.");
+    }
+  };
+  
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
@@ -193,6 +253,14 @@ export default function PostDetail() {
   }
 
   return (
+    <>
+    {showSuccess && (
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-md shadow-md z-50 transition-all duration-300">
+        Post deleted successfully!
+      </div>
+    )}
+
+
     <div className="container mx-auto px-4 py-8">
       <header className="mb-6">
         <Button variant="ghost" asChild>
@@ -204,11 +272,17 @@ export default function PostDetail() {
 
         {/* Show Edit Button if Current User is the Owner of the Post */}
         {currentUser === post.user_id && (
-          <Link href={`/community/post/editPost/${post.post_id}`}>
-          <Button variant="outline" className="ml-4">
-              Edit
+          <>
+            <Link href={`/community/post/editPost/${post.post_id}`}>
+              <Button variant="outline" className="ml-4">Edit</Button>
+            </Link>
+            <Button
+              className="ml-2 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleDeletePost}
+            >
+              Delete
             </Button>
-          </Link>
+          </>
         )}
       </header>
 
@@ -246,23 +320,46 @@ export default function PostDetail() {
         </article>
 
         <section className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Comments</h2>
-          {comments.length === 0 ? (
-            <p>No comments yet.</p>
-          ) : (
-            <ul className="space-y-4">
-              {comments.map((comment, index) => (
-                <li key={index} className="border rounded p-4">
+        <h2 className="text-xl font-semibold mb-4">Comments</h2>
+        {comments.length === 0 ? (
+          <p>No comments yet.</p>
+        ) : (
+          <ul className="space-y-4">
+           {comments.map((comment, index) => {
+            /////////
+              console.log("Current User:", currentUser);
+              console.log("Comment user_id:", comment.user_id);
+              console.log("Comment id:", comment.comment_id);
+
+              if (!comment.user_id) {
+                console.error("Missing user_id for comment:", comment);
+              }
+              ///////////
+
+              return (
+                <li key={index} className="relative border rounded p-4">
                   <p className="font-semibold">{comment.username}</p>
                   <p>{comment.comment}</p>
                   <p className="text-sm text-gray-500">
                     Posted on{" "}
                     {new Date(comment.created_at).toLocaleString()}
                   </p>
+
+                  {comment.user_id === currentUser && (
+                    <Button
+                      variant="ghost"
+                      className="absolute top-2 right-2 text-red-500"
+                      onClick={() => handleDeleteComment(comment.comment_id)}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </li>
-              ))}
-            </ul>
-          )}
+              );
+            })}
+
+          </ul>
+        )}
 
           <form onSubmit={handleAddComment} className="mt-6">
             <label htmlFor="comment" className="block mb-2 font-medium">
@@ -287,5 +384,6 @@ export default function PostDetail() {
         </section>
       </main>
     </div>
+    </>
   );
 }
