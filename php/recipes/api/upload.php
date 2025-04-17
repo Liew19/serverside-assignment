@@ -24,11 +24,30 @@ $fileName = $file['name'];
 $fileTmpName = $file['tmp_name'];
 $fileError = $file['error'];
 
-// Generate a unique filename to prevent overwriting
-$uniqueFileName = uniqid() . '_' . $fileName;
-
 // Define the upload directory path for storage
 $uploadDir = 'C:/Users/User/OneDrive/Documents/GitHub/serverside-assignment/public/images/recipes/';
+
+// Generate a unique filename to prevent overwriting
+// Extract filename and extension
+$fileInfo = pathinfo($fileName);
+$filenameWithoutExt = $fileInfo['filename'];
+$extension = isset($fileInfo['extension']) ? '.' . $fileInfo['extension'] : '';
+
+// Function to generate a unique filename in the format filename_[id].extension
+function generateUniqueFilename($baseName, $extension, $uploadDir) {
+    $counter = 1;
+    $newFilename = $baseName . '_' . $counter . $extension;
+
+    // Check if file exists and increment counter until we find a unique name
+    while (file_exists($uploadDir . $newFilename)) {
+        $counter++;
+        $newFilename = $baseName . '_' . $counter . $extension;
+    }
+
+    return $newFilename;
+}
+
+$uniqueFileName = generateUniqueFilename($filenameWithoutExt, $extension, $uploadDir);
 
 // Create directory if it doesn't exist
 if (!file_exists($uploadDir)) {
@@ -71,4 +90,4 @@ if (move_uploaded_file($fileTmpName, $uploadDir . $uniqueFileName)) {
     error_log("Failed to move uploaded file. Upload dir: " . $uploadDir . ", File: " . $uniqueFileName);
     http_response_code(500);
     echo json_encode(['error' => 'Failed to save the file']);
-} 
+}
