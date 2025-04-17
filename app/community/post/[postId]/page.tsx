@@ -29,6 +29,9 @@ export default function PostDetail() {
   const [newComment, setNewComment] = useState("");
   const [addingComment, setAddingComment] = useState(false);
 
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+
   useEffect(() => {
     if (!postId) return;
 
@@ -74,6 +77,21 @@ export default function PostDetail() {
 
     fetchPostDetails();
     fetchComments();
+
+    const fetchLikeStatus = async () => {
+      try {
+        const res = await fetch(`http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=getLikeStatus&postId=${postId}`, {
+          credentials: "include"
+        });
+        const data = await res.json();
+        setLiked(data.liked);
+        setLikeCount(data.likeCount);
+      } catch (err) {
+        console.error("Failed to fetch like status:", err);
+      }
+    };
+  
+    fetchLikeStatus();
   }, [postId]);
 
   const handleAddComment = async (e: React.FormEvent) => {
@@ -113,6 +131,29 @@ export default function PostDetail() {
       console.error("Error adding comment:", err);
     } finally {
       setAddingComment(false);
+    }
+  };
+
+  const handleToggleLike = async () => {
+    try {
+      const res = await fetch("http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=toggleLike", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ post_id: postId }),
+      });
+  
+      const data = await res.json();
+      console.log("Response:", data);
+      
+      if (data.success) {
+        setLiked(data.liked);
+        setLikeCount((prev) => prev + (data.liked ? 1 : -1));
+      }
+    } catch (err) {
+      console.error("Error toggling like:", err);
     }
   };
 
@@ -157,6 +198,19 @@ export default function PostDetail() {
               />
             </div>
           )}
+
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              aria-label="Toggle like"
+              className={`px-4 py-2 rounded-md text-sm font-semibold ${
+                liked ? "bg-red-500 text-white" : "bg-gray-200 text-gray-800"
+              }`}
+              onClick={handleToggleLike}
+            >
+              {liked ? "♥ Liked" : "♡ Like"}
+            </button>
+            <span>{likeCount} likes</span>
+          </div>
         </article>
 
         {/* Comments Section */}

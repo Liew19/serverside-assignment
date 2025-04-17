@@ -150,20 +150,46 @@ if ($method === 'PUT' && $action === 'update_post') {
   exit();
 }
 
-if ($_GET['action'] === 'getPostById' && isset($_GET['postId'])) {
-  $postId = (int) $_GET['postId'];
-  error_log("Post ID received: " . $postId);
+// if ($_GET['action'] === 'getPostById' && isset($_GET['postId'])) {
+//   $postId = (int) $_GET['postId'];
+//   error_log("Post ID received: " . $postId);
 
+//   $result = Post::getPostById($postId, $database);
+//   if ($result) {
+//     http_response_code(200);
+//     echo json_encode(['message' => 'Post fetched successfully', 'data' => $result]);
+//   } else {
+//     http_response_code(404);
+//     echo json_encode(['message' => 'Post not found']);
+//   }
+//   exit();
+// }
+
+if ($_GET['action'] === 'getPostById' && isset($_GET['postId'])) {
+  session_start();
+  $postId = (int) $_GET['postId'];
+  $userId = $_SESSION['user_id'] ?? 1;
+
+  require_once __DIR__ . '/../models/LikeModel.php';
+  $likeModel = new LikeModel();
+
+  error_log("Post ID received: " . $postId);
   $result = Post::getPostById($postId, $database);
+
   if ($result) {
-    http_response_code(200);
-    echo json_encode(['message' => 'Post fetched successfully', 'data' => $result]);
+      // Add like count and whether user liked it
+      $result['like_count'] = $likeModel->getLikeCount($postId);
+      $result['liked_by_user'] = $likeModel->getLikeStatus($postId, $userId);
+
+      http_response_code(200);
+      echo json_encode(['message' => 'Post fetched successfully', 'data' => $result]);
   } else {
-    http_response_code(404);
-    echo json_encode(['message' => 'Post not found']);
+      http_response_code(404);
+      echo json_encode(['message' => 'Post not found']);
   }
   exit();
 }
+
 
 // Catch-all for unsupported methods/actions
 http_response_code(400);
