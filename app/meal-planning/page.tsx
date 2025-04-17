@@ -18,18 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
   Edit,
-  Filter,
+  LogIn,
+  Navigation,
   Plus,
-  Trash2
+  Trash2,
+  UserPlus
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Meal {
@@ -55,33 +57,13 @@ export default function MealPlanningPage() {
           Home Page
         </Link>
       </Button>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Meal Planning</h1>
-          <p className="text-muted-foreground mt-1">
-            Plan your meals for days or weeks ahead
-          </p>
-        </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Create New Plan
-        </Button>
+      <div className="flex flex-col justify-start items-start gap-4 mb-8">
+        <h1 className="text-3xl font-bold">Meal Planning</h1>
+        <p className="text-muted-foreground mt-1">
+          Plan your meals for days or weeks ahead
+        </p>
       </div>
-      <Tabs defaultValue="calendar" className="mb-8">
-        <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex md:space-x-0">
-          <TabsTrigger value="calendar" className="flex-1 md:flex-initial">
-            Calendar View
-          </TabsTrigger>
-          <TabsTrigger value="saved" className="flex-1 md:flex-initial">
-            Saved Plans
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="calendar" className="mt-6">
-          <CalendarView />
-        </TabsContent>
-        {/* <TabsContent value="saved" className="mt-6">
-          <SavedPlansView />
-        </TabsContent> */}
-      </Tabs>
+      <CalendarView />
     </div>
   );
 }
@@ -95,9 +77,11 @@ function CalendarView() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [mealTypeFilter, setMealTypeFilter] = useState("all");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const router = useRouter();
   const { toast } = useToast();
   
-  // For add meal dialog
   const [isAddMealOpen, setIsAddMealOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -106,12 +90,10 @@ function CalendarView() {
   const [isCustomMeal, setIsCustomMeal] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState("");
   
-  // For view/edit meal dialog
   const [isViewMealOpen, setIsViewMealOpen] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Generate days for the current month
   const daysInMonth = new Date(
     currentYear,
     currentDate.getMonth() + 1,
@@ -126,6 +108,27 @@ function CalendarView() {
   
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: firstDayOfMonth }, (_, i) => null);
+
+  useEffect(() => {
+    checkUserLoginStatus();
+  }, []);
+
+  const checkUserLoginStatus = () => {
+    // Check if user_id cookie exists
+    const cookies = document.cookie.split(';');
+    const userIdCookie = cookies.find(cookie => cookie.trim().startsWith('user_id='));
+    
+    if (userIdCookie) {
+      const userId = userIdCookie.split('=')[1];
+      if (userId && userId !== "guest") {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+    } else {
+      setIsLoggedIn(false);
+    }
+  };
 
   // Navigation functions
   const nextMonth = () => {
@@ -144,7 +147,6 @@ function CalendarView() {
     fetchRecipes();
   }, []);
 
-  // Fetch meals for the current month
   useEffect(() => {
     fetchMealsForMonth();
   }, [currentDate, mealTypeFilter]);
@@ -179,14 +181,11 @@ function CalendarView() {
   const fetchMealsForMonth = async () => {
     setLoading(true);
     try {
-      // Include credentials option for session cookies
       const response = await fetch(
-        `http://localhost/server/php/meals/api/get_meals_for_month.php?year=${currentYear}&month=${
-          currentDate.getMonth() + 1
-        }&type=${mealTypeFilter}`,
+        `http://localhost/server/php/meals/api/get_meals_for_month.php?year=${currentYear}&month=${currentDate.getMonth() + 1}&type=${mealTypeFilter}`,
         {
           method: 'GET',
-          credentials: 'include', // Important for session cookies
+          credentials: 'include',
         }
       );
       
@@ -204,18 +203,16 @@ function CalendarView() {
       setMeals(data);
     } catch (error) {
       console.error("Error fetching meals:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to load meals. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle opening the add meal dialog
   const handleAddMeal = (day: number) => {
+    if (!isLoggedIn) {
+      setIsAuthDialogOpen(true);
+      return;
+    }
     // Format the date (YYYY-MM-DD)
     const formattedDate = `${currentYear}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
@@ -227,8 +224,7 @@ function CalendarView() {
     setSelectedRecipe("");
     setIsAddMealOpen(true);
   };
-
-  // Handle submitting a new meal
+  
   const handleSubmitMeal = async () => {
     try {
       // Validation
@@ -250,12 +246,11 @@ function CalendarView() {
         return;
       }
       
-      // Create meal object
       const newMeal = {
         date: selectedDate,
         name: isCustomMeal ? mealName : recipes.find(r => r.recipe_id === selectedRecipe)?.title || "",
         type: mealType,
-        isCustom: isCustomMeal ? 1 : 0,  // Make sure this matches your PHP expectation (numeric)
+        isCustom: isCustomMeal ? 1 : 0,
         recipeId: isCustomMeal ? null : selectedRecipe
       };
       
@@ -279,9 +274,10 @@ function CalendarView() {
         throw new Error(responseData.error);
       }
       
-      // Add the new meal to the meals array
-      // Using the returned meal object from the API which should include the ID
-      setMeals(prevMeals => [...prevMeals, responseData]);
+      setMeals(prevMeals => [...prevMeals, {
+        ...responseData,
+        isCustom: responseData.isCustom === 1 || responseData.isCustom === true
+      }]);
       
       toast({
         title: "Success",
@@ -299,12 +295,10 @@ function CalendarView() {
     }
   };
 
-  // Handle opening the view/edit meal dialog
   const handleViewMeals = (day: number) => {
     // Format the date (YYYY-MM-DD)
     const formattedDate = `${currentYear}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    // Get meals for the selected day
     const mealsForDay = getMealsForDay(day);
     
     if (mealsForDay.length > 0) {
@@ -317,7 +311,6 @@ function CalendarView() {
     }
   };
 
-  // Handle editing a meal
   const handleEditMeal = (meal: Meal) => {
     setSelectedMeal(meal);
     setMealName(meal.name);
@@ -327,7 +320,6 @@ function CalendarView() {
     setIsEditing(true);
   };
 
-  // Handle updating a meal
   const handleUpdateMeal = async () => {
     if (!selectedMeal) return;
     
@@ -350,8 +342,7 @@ function CalendarView() {
         });
         return;
       }
-      
-      // Create updated meal object
+
       const updatedMeal = {
         id: selectedMeal.id,
         name: isCustomMeal ? mealName : recipes.find(r => r.recipe_id === selectedRecipe)?.title || "",
@@ -387,7 +378,6 @@ function CalendarView() {
         throw new Error(responseData.error || 'Failed to update meal');
       }
       
-      // Update the local state
       setMeals(prevMeals => 
         prevMeals.map(meal => 
           meal.id === selectedMeal.id ? {...meal, ...updatedMeal} : meal
@@ -411,7 +401,6 @@ function CalendarView() {
     }
   };
 
-  // Handle deleting a meal
   const handleDeleteMeal = async (mealId: string) => {
     try {
       const response = await fetch('http://localhost/server/php/meals/api/delete_meal.php', {
@@ -433,7 +422,6 @@ function CalendarView() {
         throw new Error(responseData.error);
       }
       
-      // Update the local state
       setMeals(prevMeals => prevMeals.filter(meal => meal.id !== mealId));
       
       toast({
@@ -441,7 +429,6 @@ function CalendarView() {
         description: "Meal deleted successfully",
       });
       
-      // If no more meals for the day, close the dialog
       const remainingMealsForDay = meals.filter(meal => 
         meal.date === selectedDate && meal.id !== mealId
       );
@@ -459,15 +446,25 @@ function CalendarView() {
     }
   };
 
-  const getMealsForDay = (day: number) => {
-    // Format the date to compare with meal dates (YYYY-MM-DD)
-    const formattedDate = `${currentYear}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const sortMealsByType = (meals: Meal[]) => {
+    const mealTypeOrder = {
+      breakfast: 1,
+      lunch: 2,
+      dinner: 3,
+      snack: 4
+    };
     
-    // Filter meals that match the exact date (year, month and day)
-    return meals.filter(meal => meal.date === formattedDate);
+    return meals.sort((a, b) => mealTypeOrder[a.type] - mealTypeOrder[b.type]);
   };
 
-  // Get color class based on meal type
+
+  const getMealsForDay = (day: number) => {
+    const formattedDate = `${currentYear}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const mealsForDay = meals.filter(meal => meal.date === formattedDate);
+    // Return sorted meals
+    return sortMealsByType(mealsForDay);
+  };
+
   const getMealTypeColor = (type: string) => {
     switch (type) {
       case 'breakfast':
@@ -543,19 +540,19 @@ function CalendarView() {
           {emptyDays.map((_, index) => (
             <div
               key={`empty-${index}`}
-              className="h-36 border rounded-lg bg-muted/20"
+              className="h-40 border rounded-lg bg-muted/20"
             ></div>
           ))}
           {days.map((day) => {
             const dayMeals = getMealsForDay(day);
-            const hasReachedMealLimit = dayMeals.length >= 4;
+            const hasReachedMealLimit = dayMeals.length >= 6;
             const formattedDate = `${currentYear}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isToday = formattedDate === new Date().toISOString().split('T')[0];
             
             return (
               <div
                 key={day}
-                className={`h-36 border rounded-lg p-2 group hover:border-primary transition-colors cursor-pointer ${isToday ? 'border-primary border-2' : ''}`}
+                className={`h-40 border rounded-lg p-2 group hover:border-primary transition-colors cursor-pointer ${isToday ? 'border-primary border-2' : ''}`}
                 onClick={() => handleViewMeals(day)}
               >
                 <div className={`font-medium mb-1 ${isToday ? 'text-primary' : ''}`}>
@@ -564,7 +561,7 @@ function CalendarView() {
                 </div>
                 
                 <div className="space-y-1 max-h-[80px] overflow-y-auto">
-                  {dayMeals.slice(0, 4).map((meal) => (
+                  {dayMeals.slice(0, 6).map((meal) => (
                     <div 
                       key={meal.id} 
                       className={`p-1 text-xs rounded flex items-center ${getMealTypeColor(meal.type)}`}
@@ -811,6 +808,15 @@ function CalendarView() {
                           </div>
                         </div>
                         <div className="flex space-x-2">
+                          {meal.isCustom ? (null) : (
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => router.push(`/recipes/${meal.recipeId}`)}
+                            >
+                              <Navigation className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             size="icon"
@@ -854,7 +860,7 @@ function CalendarView() {
               </div>
               
               <DialogFooter className="flex justify-between">
-                {getMealsForDay(selectedDay || 0).length < 4 && (
+                {getMealsForDay(selectedDay || 0).length < 6 && (
                   <Button onClick={() => {
                     setIsViewMealOpen(false);
                     handleAddMeal(selectedDay || 0);
@@ -870,78 +876,33 @@ function CalendarView() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent className="w-[400px]">
+        <DialogHeader>
+          <DialogTitle className="my-2">Login Required</DialogTitle>
+          <DialogDescription>
+            You need to be logged in to plan meals and manage your meal calendar.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex flex-col gap-4 py-4 mt-5">
+          <Button asChild className="w-full">
+            <Link href="/login">
+              <LogIn className="mr-2 h-4 w-4" />
+              Have an account? Login here
+            </Link>
+          </Button>
+          
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/register">
+              <UserPlus className="mr-2 h-4 w-4" />
+              New user? Register here
+            </Link>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
     </div>
   );
-}
-
-// function SavedPlansView() {
-//   const savedPlans = [
-//     {
-//       id: "1",
-//       title: "Weekly Family Dinner Plan",
-//       description: "A balanced meal plan for a family of four",
-//       date: "Created on Apr 15, 2023",
-//       meals: 21,
-//       tags: ["Family", "Balanced"],
-//     },
-//     {
-//       id: "2",
-//       title: "Low Carb Week",
-//       description: "Keto-friendly meals for weight management",
-//       date: "Created on Mar 22, 2023",
-//       meals: 15,
-//       tags: ["Keto", "Low Carb"],
-//     },
-//     {
-//       id: "3",
-//       title: "Vegetarian Challenge",
-//       description: "One week of delicious meat-free recipes",
-//       date: "Created on Feb 10, 2023",
-//       meals: 18,
-//       tags: ["Vegetarian", "Healthy"],
-//     },
-//   ];
-
-//   return (
-//     <div>
-//       <div className="flex mb-6">
-//         <div className="relative flex-1 max-w-sm">
-//           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-//           <Input
-//             type="search"
-//             placeholder="Search saved plans..."
-//             className="pl-8"
-//           />
-//         </div>
-//       </div>
-
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//         {savedPlans.map((plan) => (
-//           <Card key={plan.id} className="hover:shadow-md transition-shadow">
-//             <CardHeader>
-//               <CardTitle>{plan.title}</CardTitle>
-//               <CardDescription>{plan.description}</CardDescription>
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-sm text-muted-foreground">{plan.date}</div>
-//               <div className="text-sm mt-1">{plan.meals} meals planned</div>
-//               <div className="flex gap-2 mt-3">
-//                 {plan.tags.map((tag) => (
-//                   <Badge key={tag} variant="outline" className="bg-primary/10">
-//                     {tag}
-//                   </Badge>
-//                 ))}
-//               </div>
-//             </CardContent>
-//             <CardFooter className="flex justify-between">
-//               <Button variant="outline" size="sm">
-//                 Edit
-//               </Button>
-//               <Button size="sm">Use Plan</Button>
-//             </CardFooter>
-//           </Card>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
+};

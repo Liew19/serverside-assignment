@@ -9,7 +9,7 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
-SET time_zone = "+00:00";
+SET time_zone = "+08:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -103,6 +103,63 @@ INSERT INTO `favorite_recipes` (`favorite_id`, `user_id`, `recipe_id`, `created_
 (3, 2, 3, '2025-04-15 07:53:37'),
 (4, 2, 8, '2025-04-15 07:55:26'),
 (5, 3, 8, '2025-04-15 18:36:19');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `meal_planning`
+--
+
+CREATE TABLE `meal_planning` (
+  `meal_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `type` enum('breakfast','lunch','dinner','snack') NOT NULL,
+  `is_custom` tinyint(1) DEFAULT 0,
+  `recipe_id` int(11) DEFAULT NULL,
+  `meal_date` date NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `meal_planning`
+--
+
+INSERT INTO `meal_planning` (`meal_id`, `user_id`, `name`, `type`, `is_custom`, `recipe_id`, `meal_date`, `created_at`) VALUES
+(1, 2, 'French Onion Soup', 'dinner', 0, 7, '2025-04-17', '2025-04-17 00:30:12'),
+(2, 3, 'Chicken Tikka Masala', 'dinner', 0, 2, '2025-04-17', '2025-04-17 01:15:22'),
+(3, 2, 'Avocado Toast', 'breakfast', 0, 8, '2025-04-17', '2025-04-16 23:45:10'),
+(4, 4, 'Greek Salad', 'lunch', 0, 9, '2025-04-17', '2025-04-17 02:30:45'),
+(5, 5, 'Chocolate Chip Cookies', 'snack', 0, 5, '2025-04-17', '2025-04-17 07:20:18'),
+(6, 1, 'Beef Stroganoff', 'dinner', 0, 3, '2025-04-18', '2025-04-17 10:45:30'),
+(7, 3, 'French Onion Soup', 'lunch', 0, 7, '2025-04-18', '2025-04-17 11:12:05'),
+(8, 5, 'Homemade Pizza', 'dinner', 0, 4, '2025-04-19', '2025-04-17 12:05:42'),
+(9, 4, 'Morning Oatmeal', 'breakfast', 1, NULL, '2025-04-19', '2025-04-17 13:30:15'),
+(10, 2, 'Avocado Toast', 'breakfast', 0, 8, '2025-04-19', '2025-04-17 14:10:38'),
+(11, 3, 'Beef Tacos', 'lunch', 0, 6, '2025-04-20', '2025-04-17 23:25:19'),
+(12, 6, 'Chicken Tikka Masala', 'dinner', 0, 2, '2025-04-20', '2025-04-18 01:40:52'),
+(13, 2, 'Yogurt Parfait', 'breakfast', 1, NULL, '2025-04-21', '2025-04-18 02:15:27'),
+(14, 5, 'Spaghetti Carbonara', 'dinner', 0, 1, '2025-04-21', '2025-04-18 03:05:33'),
+(15, 3, 'Greek Salad', 'lunch', 0, 9, '2025-04-22', '2025-04-18 05:25:48'),
+(16, 4, 'Homemade Pizza', 'dinner', 0, 4, '2025-04-22', '2025-04-18 06:50:21'),
+(17, 1, 'Breakfast Burrito', 'breakfast', 1, NULL, '2025-04-23', '2025-04-19 00:35:14'),
+(18, 6, 'Beef Stroganoff', 'dinner', 0, 3, '2025-04-23', '2025-04-19 01:20:37'),
+(19, 3, 'Avocado Toast', 'breakfast', 0, 8, '2025-04-24', '2025-04-19 02:45:52'),
+(20, 5, 'French Onion Soup', 'lunch', 0, 7, '2025-04-24', '2025-04-19 04:15:08'),
+(21, 2, 'Beef Tacos', 'dinner', 0, 6, '2025-04-25', '2025-04-19 23:30:42'),
+(22, 4, 'Smoothie Bowl', 'breakfast', 1, NULL, '2025-04-25', '2025-04-20 00:55:19'),
+(23, 3, 'Chicken Tikka Masala', 'dinner', 0, 2, '2025-04-26', '2025-04-20 06:40:27'),
+(24, 6, 'Greek Salad', 'lunch', 0, 9, '2025-04-26', '2025-04-20 08:20:33'),
+(25, 2, 'Chocolate Chip Cookies', 'snack', 0, 5, '2025-04-27', '2025-04-21 01:10:11'),
+(26, 5, 'Homemade Pizza', 'dinner', 0, 4, '2025-04-27', '2025-04-21 02:35:48'),
+(27, 3, 'Avocado Toast', 'breakfast', 0, 8, '2025-04-28', '2025-04-21 03:50:22'),
+(28, 4, 'Spaghetti Carbonara', 'dinner', 0, 1, '2025-04-28', '2025-04-21 05:25:37'),
+(29, 2, 'Beef Stroganoff', 'lunch', 0, 3, '2025-04-29', '2025-04-22 00:40:15'),
+(30, 6, 'Overnight Chia Pudding', 'breakfast', 1, NULL, '2025-04-30', '2025-04-22 01:15:53'),
+(31, 2, 'Spaghetti Carbonara', 'lunch', 0, 1, '2025-04-17', '2025-04-17 05:51:42'),
+(32, 2, 'Greek Salad', 'dinner', 0, 9, '2025-04-17', '2025-04-17 05:51:59'),
+(33, 2, 'Chocolate Chip Cookies', 'snack', 0, 5, '2025-04-17', '2025-04-17 05:52:13'),
+(34, 2, 'Homemade Pizza', 'lunch', 0, NULL, '2025-04-17', '2025-04-17 05:53:52');
 
 -- --------------------------------------------------------
 
@@ -223,6 +280,14 @@ ALTER TABLE `favorite_recipes`
   ADD KEY `recipe_id` (`recipe_id`);
 
 --
+-- Indexes for table `meal_planning`
+--
+ALTER TABLE `meal_planning`
+  ADD PRIMARY KEY (`meal_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `recipe_id` (`recipe_id`);
+
+--
 -- Indexes for table `recipes`
 --
 ALTER TABLE `recipes`
@@ -268,6 +333,12 @@ ALTER TABLE `favorite_recipes`
   MODIFY `favorite_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
+-- AUTO_INCREMENT for table `meal_planning`
+--
+ALTER TABLE `meal_planning`
+  MODIFY `meal_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+
+--
 -- AUTO_INCREMENT for table `recipes`
 --
 ALTER TABLE `recipes`
@@ -308,6 +379,14 @@ ALTER TABLE `competition_entries`
 ALTER TABLE `favorite_recipes`
   ADD CONSTRAINT `favorite_recipes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
   ADD CONSTRAINT `favorite_recipes_ibfk_2` FOREIGN KEY (`recipe_id`) REFERENCES `recipes` (`recipe_id`);
+
+--
+-- Constraints for table `meal_planning`
+--
+ALTER TABLE `meal_planning`
+  ADD CONSTRAINT `meal_planning_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `meal_planning_ibfk_2` FOREIGN KEY (`recipe_id`) REFERENCES `recipes` (`recipe_id`) ON DELETE SET NULL;
+COMMIT;
 
 --
 -- Constraints for table `recipes`
