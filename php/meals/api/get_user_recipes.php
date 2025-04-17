@@ -1,6 +1,4 @@
 <?php
-// /php/meals/api/get_user_recipes.php
-require_once __DIR__ . '/../../database/database.php';
 require_once __DIR__ . '/../../recipes/models/Recipe.php';
 
 header('Content-Type: application/json');

@@ -1,6 +1,4 @@
 <?php
-// /php/meals/api/get_meals_for_month.php
-require_once __DIR__ . '/../../database/database.php';
 require_once __DIR__ . '/../models/MealPlanning.php';
 
 header('Content-Type: application/json');
