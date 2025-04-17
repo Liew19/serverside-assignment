@@ -401,6 +401,10 @@ ALTER TABLE `meal_planning`
   ADD CONSTRAINT `meal_planning_ibfk_2` FOREIGN KEY (`recipe_id`) REFERENCES `recipes` (`recipe_id`) ON DELETE SET NULL;
 COMMIT;
 
+-- Constraints for table `password_resets`
+ALTER TABLE `password_resets`
+  ADD CONSTRAINT `password_resets_ibfk_1` FOREIGN KEY (`email`) REFERENCES `users` (`email`) ON DELETE CASCADE;
+
 --
 -- Constraints for table `recipes`
 --
