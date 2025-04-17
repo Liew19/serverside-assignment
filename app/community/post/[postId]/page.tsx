@@ -6,8 +6,17 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+// Helper function to get cookie value
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+  return null;
+}
+
 interface Post {
   post_id: number;
+  user_id: number;
   title: string;
   content: string;
   imageURL: string;
@@ -31,12 +40,19 @@ export default function PostDetail() {
 
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [currentUser, setCurrentUser] = useState<number | null>(null);
+
+  useEffect(() => {
+    const userIdFromCookie = getCookie("user_id");
+    if (userIdFromCookie) {
+      setCurrentUser(parseInt(userIdFromCookie, 10));
+    }
+  }, []);
 
   useEffect(() => {
     if (!postId) return;
 
-    const postIdNumber = parseInt(postId as string, 10); // Ensure postId is treated as a string
-
+    const postIdNumber = parseInt(postId as string, 10);
     if (isNaN(postIdNumber)) {
       console.error("Invalid postId:", postId);
       return;
@@ -75,14 +91,14 @@ export default function PostDetail() {
       }
     };
 
-    fetchPostDetails();
-    fetchComments();
-
     const fetchLikeStatus = async () => {
       try {
-        const res = await fetch(`http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=getLikeStatus&postId=${postId}`, {
-          credentials: "include"
-        });
+        const res = await fetch(
+          `http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=getLikeStatus&postId=${postId}`,
+          {
+            credentials: "include",
+          }
+        );
         const data = await res.json();
         setLiked(data.liked);
         setLikeCount(data.likeCount);
@@ -90,7 +106,9 @@ export default function PostDetail() {
         console.error("Failed to fetch like status:", err);
       }
     };
-  
+
+    fetchPostDetails();
+    fetchComments();
     fetchLikeStatus();
   }, [postId]);
 
@@ -102,23 +120,22 @@ export default function PostDetail() {
     try {
       const res = await fetch(
         "http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=addComment",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              postId,
-              content: newComment,
-            }),
-          }
-        );
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            postId,
+            content: newComment,
+          }),
+        }
+      );
       const data = await res.json();
 
       if (data.message === "Comment added successfully") {
         setNewComment("");
-        // Reload comments
         const commentRes = await fetch(
           `http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=getComments&postId=${postId}`
         );
@@ -136,18 +153,20 @@ export default function PostDetail() {
 
   const handleToggleLike = async () => {
     try {
-      const res = await fetch("http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=toggleLike", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ post_id: postId }),
-      });
-  
+      const res = await fetch(
+        "http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=toggleLike",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ post_id: postId }),
+        }
+      );
+
       const data = await res.json();
-      console.log("Response:", data);
-      
+
       if (data.success) {
         setLiked(data.liked);
         setLikeCount((prev) => prev + (data.liked ? 1 : -1));
@@ -182,12 +201,23 @@ export default function PostDetail() {
             Back to Community
           </Link>
         </Button>
+
+        {/* Show Edit Button if Current User is the Owner of the Post */}
+        {currentUser === post.user_id && (
+          <Link href={`/community/post/editPost/${post.post_id}`}>
+          <Button variant="outline" className="ml-4">
+              Edit
+            </Button>
+          </Link>
+        )}
       </header>
 
       <main>
         <article className="border rounded-lg overflow-hidden p-6">
           <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
-          <p className="text-gray-700 mb-6 whitespace-pre-line">{post.content}</p>
+          <p className="text-gray-700 mb-6 whitespace-pre-line">
+            {post.content}
+          </p>
 
           {post.imageURL && (
             <div className="mb-6">
@@ -203,7 +233,9 @@ export default function PostDetail() {
             <button
               aria-label="Toggle like"
               className={`px-4 py-2 rounded-md text-sm font-semibold ${
-                liked ? "bg-red-500 text-white" : "bg-gray-200 text-gray-800"
+                liked
+                  ? "bg-red-500 text-white"
+                  : "bg-gray-200 text-gray-800"
               }`}
               onClick={handleToggleLike}
             >
@@ -213,7 +245,6 @@ export default function PostDetail() {
           </div>
         </article>
 
-        {/* Comments Section */}
         <section className="mt-8">
           <h2 className="text-xl font-semibold mb-4">Comments</h2>
           {comments.length === 0 ? (
@@ -225,14 +256,14 @@ export default function PostDetail() {
                   <p className="font-semibold">{comment.username}</p>
                   <p>{comment.comment}</p>
                   <p className="text-sm text-gray-500">
-                    Posted on {new Date(comment.created_at).toLocaleString()}
+                    Posted on{" "}
+                    {new Date(comment.created_at).toLocaleString()}
                   </p>
                 </li>
               ))}
             </ul>
           )}
 
-          {/* Add Comment Form */}
           <form onSubmit={handleAddComment} className="mt-6">
             <label htmlFor="comment" className="block mb-2 font-medium">
               Add a Comment

@@ -1,11 +1,12 @@
 "use client"
 
-import { ArrowLeft, PlusCircle } from "lucide-react";
+import { ArrowLeft, PlusCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
+// Post interface
 interface Post {
   post_id: number;
   userId: number;
@@ -52,11 +53,26 @@ export default function Home() {
   );
 }
 
+// Function to get cookie value by name
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined" || !document.cookie) return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()!.split(";").shift()!;
+  return null;
+};
+
 function CommunityFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'latest' | 'popular' | 'mine'>('all');
-  const userId = 123; // Replace with actual logged-in user ID
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const userId = getCookie("user_id");
+    setCurrentUserId(userId);
+    console.log("Current user ID from cookie:", userId);
+  }, []);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -71,7 +87,12 @@ function CommunityFeed() {
           url += "?action=getPopularPosts";
           break;
         case 'mine':
-          url += `?action=getUserPosts&userId=${userId}`;
+          // Use currentUserId in the API request
+          if (currentUserId) {
+            url += `?action=getUserPosts&userId=${currentUserId}`;
+          } else {
+            url += "?action=getAllPosts"; // 
+          }
           break;
         default:
           url += "?action=getAllPosts";
@@ -99,7 +120,7 @@ function CommunityFeed() {
     };
 
     fetchPosts();
-  }, [filter]);
+  }, [filter, currentUserId]); 
 
   if (loading) return <p>Loading posts...</p>;
 
