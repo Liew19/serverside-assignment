@@ -7,16 +7,12 @@ class Post
     public static function createPost($title, $content, $imagePath, $userId, $database)
     {
         $conn = $database->conn;
+        if (empty($title) || empty($content) || empty($userId)) return false;
 
-        if (empty($title) || empty($content) || empty($userId)) {
-            return false; // Return false instead of die()
-        }
-        
-        $sql = "INSERT INTO user_post (user_id, title, content, imageURL) 
-                VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO user_post (user_id, title, content, imageURL) VALUES (?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("isss", $userId, $title, $content, $imagePath);
-
+        
         if ($stmt->execute()) {
             return $conn->insert_id;
         } else {

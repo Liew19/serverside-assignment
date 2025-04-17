@@ -53,6 +53,12 @@ export default function PostDetail() {
   }, []);
 
   useEffect(() => {
+    if (post) {
+      console.log(post.imageURL);  // Log it when post is available
+    }
+  }, [post]);
+
+  useEffect(() => {
     if (!postId) return;
 
     const postIdNumber = parseInt(postId as string, 10);
@@ -64,7 +70,7 @@ export default function PostDetail() {
     const fetchPostDetails = async () => {
       try {
         const res = await fetch(
-          `http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=getPostById&postId=${postIdNumber}`
+          `http://localhost/server/php/community/api/post.php?action=getPostById&postId=${postIdNumber}`
         );
         const data = await res.json();
 
@@ -83,7 +89,7 @@ export default function PostDetail() {
     const fetchComments = async () => {
       try {
         const res = await fetch(
-          `http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=getComments&postId=${postIdNumber}`
+          `http://localhost/server/php/community/api/comment.php?action=getComments&postId=${postIdNumber}`
         );
         const data = await res.json();
         if (data.data) {
@@ -97,7 +103,7 @@ export default function PostDetail() {
     const fetchLikeStatus = async () => {
       try {
         const res = await fetch(
-          `http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=getLikeStatus&postId=${postId}`,
+          `http://localhost/server/php/community/api/like.php?action=getLikeStatus&postId=${postId}`,
           {
             credentials: "include",
           }
@@ -122,7 +128,7 @@ export default function PostDetail() {
     setAddingComment(true);
     try {
       const res = await fetch(
-        "http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=addComment",
+        "http://localhost/server/php/community/api/comment.php?action=addComment",
         {
           method: "POST",
           headers: {
@@ -140,7 +146,7 @@ export default function PostDetail() {
       if (data.message === "Comment added successfully") {
         setNewComment("");
         const commentRes = await fetch(
-          `http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=getComments&postId=${postId}`
+          `http://localhost/server/php/community/api/comment.php?action=getComments&postId=${postId}`
         );
         const commentData = await commentRes.json();
         if (commentData.data) {
@@ -157,7 +163,7 @@ export default function PostDetail() {
   const handleToggleLike = async () => {
     try {
       const res = await fetch(
-        "http://localhost/serverass/serverside-assignment/php/community/api/like.php?action=toggleLike",
+        "http://localhost/server/php/community/api/like.php?action=toggleLike",
         {
           method: "POST",
           headers: {
@@ -185,7 +191,7 @@ export default function PostDetail() {
   
     try {
       const res = await fetch(
-        `http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=delete_post&id=${postId}`,
+        `http://localhost/server/php/community/api/post.php?action=delete_post&id=${postId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -214,7 +220,7 @@ export default function PostDetail() {
   
     try {
       const res = await fetch(
-        `http://localhost/serverass/serverside-assignment/php/community/api/comment.php?action=deleteComment&commentId=${commentId}`,
+        `http://localhost/server/php/community/api/comment.php?action=deleteComment&commentId=${commentId}`,
         {
           method: "POST",
           credentials: "include",
@@ -296,7 +302,7 @@ export default function PostDetail() {
           {post.imageURL && (
             <div className="mb-6">
               <img
-                src={post.imageURL}
+                src={`http://localhost/server/serverside-assignment/public/${post.imageURL}`}
                 alt={post.title}
                 className="w-full rounded-lg object-cover max-h-96"
               />

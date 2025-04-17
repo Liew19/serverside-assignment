@@ -77,7 +77,7 @@ function CommunityFeed() {
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
-      let url = "http://localhost/serverass/serverside-assignment/php/community/api/post.php";
+      let url = "http://localhost/server/php/community/api/post.php";
 
       switch (filter) {
         case 'latest':

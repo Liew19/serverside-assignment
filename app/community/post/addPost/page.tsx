@@ -44,66 +44,68 @@ export default function NewPostPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
+    e.preventDefault();
+    setIsSubmitting(true);
+  
     if (!formData.title || !formData.content) {
       toast({
         title: "Missing Fields",
         description: "Title and content are required.",
         variant: "destructive",
-      })
-      setIsSubmitting(false)
-      return
+      });
+      setIsSubmitting(false);
+      return;
     }
-
-    const postData = new FormData()
-    postData.append("action","createPost")
-    postData.append("title", formData.title)
-    postData.append("content", formData.content)
+  
+    const postData = new FormData();
+    postData.append("action", "createPost");
+    postData.append("title", formData.title);
+    postData.append("content", formData.content);
+    
     if (formData.image) {
-      postData.append("image", formData.image)
+      console.log("Including image:", formData.image.name, "Size:", formData.image.size);
+      postData.append("image", formData.image);
     }
-    for (let [key, value] of postData.entries()) {
-      console.log(key, value); // Logs: action createPost, title My New Post, content This is my post content
-    }
+   
     try {
-      const response = await fetch("http://localhost/serverass/serverside-assignment/php/community/api/post.php", { //problem
+      console.log("Submitting form data...");
+      
+      const response = await fetch("http://localhost/server/php/community/api/post.php", { 
         credentials: 'include',
         method: "POST",
         body: postData,
-      })
-
-      // console.log("Response status:", response.status);
-      // console.log("Response type:", response.headers.get("content-type"));
-      // const text = await response.text(); // Get raw text instead of json
-      // console.log("Response body:", text);
-
-
-      //const data = await response.json()
-
-      const data2 = await response.text()
-     // const data = JSON.parse(data2);
-
-      if (response.ok ) {
-        console.log("Response data:", data2); // no data retrieving back
+      });
+  
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse JSON response:", e);
+        throw new Error("Invalid server response format");
+      }
+  
+      if (response.ok) {
+        console.log("Response data:", data);
         toast({
           title: "Post Published",
           description: "Your post has been successfully created.",
-        })
-        router.push("/community")
+        });
+        router.push("/community");
       } else {
-        throw new Error("Failed to create post")
+        throw new Error(data?.message || "Failed to create post");
       }
     } catch (error) {
-      console.error("Error creating post:", error)
+      console.error("Error creating post:", error);
       toast({
         title: "Error",
         description: "Failed to create post. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 

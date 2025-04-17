@@ -20,7 +20,7 @@ require_once '../../users/User.php';
 
 session_start();
 
-$database = new Database("localhost", "root", "", "database");
+$database = new Database("localhost", "root", "", "recipe_database");
 $conn = $database->conn;
 
 if (!$conn) {

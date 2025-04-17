@@ -27,13 +27,16 @@ export default function EditPost() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Base URL for images
+  const imageBaseUrl = "http://localhost/server/serverside-assignment/public/";
+
   const currentUserId = 1; // Set user_id as 1
 
   useEffect(() => {
     const fetchPostDetails = async () => {
       try {
         const res = await fetch(
-          `http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=getPostById&postId=${postId}`
+          `http://localhost/server/php/community/api/post.php?action=getPostById&postId=${postId}`
         );
         const data = await res.json();
   
@@ -48,7 +51,11 @@ export default function EditPost() {
           setPost(normalizedPost);
           setTitle(normalizedPost.title);
           setContent(normalizedPost.content);
-          setCurrentImage(normalizedPost.imageURL || "");
+          
+          // Set the full image URL if imageURL exists
+          if (normalizedPost.imageURL) {
+            setCurrentImage(imageBaseUrl + normalizedPost.imageURL);
+          }
         } else {
           setError("Post not found");
         }
@@ -95,8 +102,7 @@ export default function EditPost() {
   
     setSubmitting(true);
   
-    try 
-    {
+    try {
       const formData = new FormData();
       formData.append("action", "update_post");  
       formData.append("post_id", postId.toString());
@@ -108,7 +114,7 @@ export default function EditPost() {
       }
   
       const res = await fetch(
-        "http://localhost/serverass/serverside-assignment/php/community/api/post.php",
+        "http://localhost/server/php/community/api/post.php",
         {
           method: "POST",
           body: formData,
@@ -137,7 +143,6 @@ export default function EditPost() {
       setSubmitting(false);
     }
   };
-  
 
   if (loading) {
     return (
@@ -241,6 +246,10 @@ export default function EditPost() {
                     src={currentImage}
                     alt="Current post image"
                     className="h-40 object-cover rounded-md"
+                    onError={(e) => {
+                      console.error("Image failed to load:", currentImage);
+                      (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Image+Not+Found";
+                    }}
                   />
                 </div>
               )}

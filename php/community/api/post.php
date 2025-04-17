@@ -19,7 +19,7 @@ require_once '../../users/User.php';
 require_once '../models/like.php';
 require_once '../models/comment.php';
 
-$database = new Database("localhost", "root", "", "database");
+$database = new Database("localhost", "root", "", "recipe_database");
 if (!$database->conn) {
   http_response_code(500);
   echo json_encode(['message' => 'Failed to connect to database']);
@@ -52,32 +52,57 @@ if ($method === 'POST' && $action === 'check_status') {
   exit();
 }
 
-// ========== CREATE POST ==========
+// ===== CREATE POST =====
 if ($method === 'POST' && $action === 'createPost') {
+  $userId = $_SESSION['user_id'] ?? null;
+  
+  if (!$userId) {
+      http_response_code(401);
+      echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+      exit;
+  }
+  
   $title = $_POST['title'] ?? '';
   $content = $_POST['content'] ?? '';
-  $userId = $_POST['user_id'] ?? ($_SESSION['user_id'] ?? 1); // Dummy fallback
-  $imageURL = '';
+  $imagePath = null;
 
+  // Handle image upload if present
   if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-    $uploadDir = '../../uploads/';
-    $fileName = basename($_FILES['image']['name']);
-    $targetPath = $uploadDir . $fileName;
+    $uploadDir = __DIR__ . '/../../public/images/community/';
+    
+    // Create directory if it doesn't exist
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0755, true)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to create upload directory']);
+            exit;
+        }
+    }
 
-    if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
-      $imageURL = '/uploads/' . $fileName;
+    $tmpName = $_FILES['image']['tmp_name'];
+    $originalName = basename($_FILES['image']['name']);
+    $ext = pathinfo($originalName, PATHINFO_EXTENSION);
+    $newFilename = uniqid('post_', true) . '.' . $ext;
+    $targetPath = $uploadDir . $newFilename;
+    
+    if (move_uploaded_file($tmpName, $targetPath)) {
+      $imagePath = 'images/community/' . $newFilename;
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to save image']);
+        exit;
     }
   }
 
-  $result = Post::createPost($title, $content, $imageURL, $userId, $database);
-  if ($result) {
-    http_response_code(201);
-    echo json_encode(['message' => 'Post created successfully']);
+  $postId = Post::createPost($title, $content, $imagePath, $userId, $database);
+  
+  if ($postId) {
+      echo json_encode(['success' => true, 'message' => 'Post created', 'post_id' => $postId]);
   } else {
-    http_response_code(500);
-    echo json_encode(['message' => 'Failed to create post']);
+      http_response_code(500);
+      echo json_encode(['success' => false, 'message' => 'Database insert failed']);
   }
-  exit();
+  exit;
 }
 
 // ========== DELETE POST ==========
