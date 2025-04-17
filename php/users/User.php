@@ -81,4 +81,95 @@ class User
     return $result['role'] === 'admin';
   }
 
+  public static function createPasswordResetToken($email, $conn)
+  {
+    // Check if email exists in users table
+    $sql = "SELECT user_id FROM users WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      return false;
+    }
+    
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+      return false;
+    }
+
+    // Generate token
+    $token = bin2hex(random_bytes(32));
+    
+    // Delete any existing tokens for this email
+    $sql = "DELETE FROM password_resets WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      return false;
+    }
+    
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    
+    // Insert new token
+    $sql = "INSERT INTO password_resets (email, token) VALUES (?, ?)";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      return false;
+    }
+    
+    $stmt->bind_param("ss", $email, $token);
+    if (!$stmt->execute()) {
+      return false;
+    }
+    
+    return [
+      'email' => $email,
+      'token' => $token
+    ];
+  }
+
+  public static function resetPassword($email, $token, $password, $conn)
+  {
+    $sql = "SELECT * FROM password_resets WHERE email = ? AND token = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      return false;
+    }
+    
+    $stmt->bind_param("ss", $email, $token);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+      return false;
+    }
+    
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    
+    $sql = "UPDATE users SET password = ? WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      return false;
+    }
+    
+    $stmt->bind_param("ss", $hashedPassword, $email);
+    if (!$stmt->execute()) {
+      return false;
+    }
+    
+    // Delete used token
+    $sql = "DELETE FROM password_resets WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      return false;
+    }
+    
+    $stmt->bind_param("s", $email);
+    if (!$stmt->execute()) {
+      return false;
+    }
+    
+    return true;
+  }
 }
