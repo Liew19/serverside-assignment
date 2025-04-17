@@ -176,7 +176,11 @@ export default function CompetitionDetailPage({
         })
         const recipeData = await checkUserRecipeResponse.json();
         console.log("user recipe", recipeData);
-        setUserRecipes(recipeData.data);
+        if (recipeData && Array.isArray(recipeData.data) && recipeData.data.length > 0) {
+          setUserRecipes(recipeData.data);
+        } else {
+          setUserRecipes([]);
+        }
         
         console.log("competition data", competitionData);
         //fetch winner is past competition is used
