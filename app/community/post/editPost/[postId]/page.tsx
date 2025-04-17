@@ -17,7 +17,7 @@ interface Post {
 export default function EditPost() {
   const params = useParams();
   const router = useRouter();
-  const postId = params.id;
+  const postId = params.postId;
   const [post, setPost] = useState<Post | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -25,29 +25,30 @@ export default function EditPost() {
   const [currentImage, setCurrentImage] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    // Fetch current user
-    const fetchCurrentUser = () => {
-      const userId = localStorage.getItem("userId");
-      setCurrentUserId(userId ? parseInt(userId) : null);
-    };
+  const currentUserId = 1; // Set user_id as 1
 
-    // Fetch post details
+  useEffect(() => {
     const fetchPostDetails = async () => {
       try {
         const res = await fetch(
           `http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=getPostById&postId=${postId}`
         );
         const data = await res.json();
-
+  
         if (data.data) {
-          setPost(data.data);
-          setTitle(data.data.title);
-          setContent(data.data.content);
-          setCurrentImage(data.data.imageURL || "");
+          const normalizedPost = {
+            ...data.data,
+            userId: data.data.user_id, 
+          };
+  
+          console.log("Fetched Post:", normalizedPost); 
+  
+          setPost(normalizedPost);
+          setTitle(normalizedPost.title);
+          setContent(normalizedPost.content);
+          setCurrentImage(normalizedPost.imageURL || "");
         } else {
           setError("Post not found");
         }
@@ -58,8 +59,7 @@ export default function EditPost() {
         setLoading(false);
       }
     };
-
-    fetchCurrentUser();
+  
     fetchPostDetails();
   }, [postId]);
 
@@ -78,37 +78,35 @@ export default function EditPost() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (!post || !currentUserId) return;
-
+  
     // Ownership validation
     if (post.userId !== currentUserId) {
       setError("You don't have permission to edit this post");
       return;
     }
-
+  
     // Input validation
     if (!title.trim() || !content.trim()) {
       setError("Title and content are required");
       return;
     }
-
+  
     setSubmitting(true);
-
-    try {
+  
+    try 
+    {
       const formData = new FormData();
-      formData.append("action", "updatePost");
-      formData.append("postId", postId.toString());
-      formData.append("userId", currentUserId.toString());
-      formData.append("title", title);
-      formData.append("content", content);
-
+      formData.append("action", "update_post");  
+      formData.append("post_id", postId.toString());
+      formData.append("title", title); 
+      formData.append("content", content); 
+  
       if (image) {
-        formData.append("image", image);
-      } else {
-        formData.append("keepImage", "true"); // Optional flag for backend
+        formData.append("image", image); 
       }
-
+  
       const res = await fetch(
         "http://localhost/serverass/serverside-assignment/php/community/api/post.php",
         {
@@ -116,21 +114,30 @@ export default function EditPost() {
           body: formData,
         }
       );
-
+  
       const data = await res.json();
-
-      if (data.success) {
-        router.push(`/community/post/${postId}`);
-      } else {
+  
+      if (data.message === "Post updated successfully") {
+        setError("Post updated successfully");
+      
+        // Delay redirect for 3 seconds to show success message
+        setTimeout(() => {
+          router.push(`/community/post/${postId}`);
+        }, 3000);
+      } 
+      else {
         setError(data.message || "Failed to update post");
       }
-    } catch (err) {
+    } 
+    catch (err) {
       console.error("Update error:", err);
       setError("An error occurred while updating the post");
-    } finally {
+    } 
+    finally {
       setSubmitting(false);
     }
   };
+  
 
   if (loading) {
     return (
@@ -180,7 +187,13 @@ export default function EditPost() {
           <h1 className="text-2xl font-bold mb-6">Edit Post</h1>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div
+              className={`px-4 py-3 rounded mb-4 border ${
+                error === "Post updated successfully"
+                  ? "bg-green-100 border-green-400 text-green-700"
+                  : "bg-red-100 border-red-400 text-red-700"
+              }`}
+            >
               {error}
             </div>
           )}
@@ -193,7 +206,7 @@ export default function EditPost() {
               <input
                 id="title"
                 type="text"
-                className="w-full p-2 border rounded-md"
+                className="w-full p-2 border border-blue-600 rounded-md bg-white"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -209,7 +222,7 @@ export default function EditPost() {
               </label>
               <textarea
                 id="content"
-                className="w-full p-2 border rounded-md min-h-32"
+                className="w-full p-2 border border-blue-600 rounded-md bg-white min-h-32"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
@@ -268,7 +281,7 @@ export default function EditPost() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="bg-orange-500 hover:bg-orange-600"
+                className="bg-blue-600 hover:bg-blue-500"
               >
                 {submitting ? "Saving..." : "Save Changes"}
               </Button>
