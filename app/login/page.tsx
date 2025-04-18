@@ -198,13 +198,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox id="remember" disabled={isLoading || success} />
-                <Label htmlFor="remember" className="text-sm font-normal">
-                  Remember me for 30 days
-                </Label>
-              </div>
-
               {success ? (
                 <Button
                   type="button"
