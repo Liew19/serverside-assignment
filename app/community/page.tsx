@@ -62,6 +62,17 @@ const getCookie = (name: string): string | null => {
   return null;
 };
 
+// Helper function to get initials from user name
+const getInitials = (name: string | undefined): string => {
+  if (!name) return "A";  // Return an empty string if name is undefined or empty
+  const nameParts = name.split(" ");
+  return nameParts
+    .map((part) => part[0].toUpperCase())
+    .slice(0, 2)
+    .join("");
+};
+
+
 function CommunityFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,13 +168,20 @@ function CommunityFeed() {
               <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Image
-                      src={post.userAvatar || "/placeholder.svg"}
-                      alt={post.userName || "User"}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
+                    {/* Display either avatar or initials if avatar is missing */}
+                    {post.userAvatar ? (
+                      <Image
+                        src={post.userAvatar}
+                        alt={post.userName || "User"}
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                        {getInitials(post.userName)}
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-medium">{post.userName}</h3>
                       <p className="text-sm text-gray-500">
