@@ -5,7 +5,7 @@ class LikeModel {
     private $conn;
 
     public function __construct() {
-        $database = new Database("localhost", "root", "", "database");
+        $database = new Database("localhost", "root", "", "recipe_database");
         $this->conn = $database->conn;
     }
 

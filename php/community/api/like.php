@@ -14,7 +14,7 @@ session_start();
 require_once __DIR__ . '/../database/database.php';
 require_once __DIR__ . '/models/like.php';  
 
-$database = new Database("localhost", "root", "", "database");
+$database = new Database("localhost", "root", "", "recipe_database");
 $conn = $database->conn;
 $likeModel = new LikeModel();
 

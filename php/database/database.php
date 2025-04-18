@@ -12,8 +12,8 @@ class Database
     $this->host = $host;
     $this->username = $username;
     $this->password = $password;
-    $this->dbName = "database";
-    $this->connect(); //automatically connect when database object is created
+    $this->dbName = "recipe_database";
+    $this->connect(); 
   }
 
   public function connect()

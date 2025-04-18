@@ -1,111 +1,123 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, ImagePlus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { toast } from "@/hooks/use-toast"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, ImagePlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 export default function NewPostPage() {
-  const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     image: null as File | null,
-  })
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
       setFormData((prev) => ({
         ...prev,
         image: file,
-      }))
+      }));
 
-      const reader = new FileReader()
-      reader.onloadend = () => setImagePreview(reader.result as string)
-      reader.readAsDataURL(file)
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
 
     if (!formData.title || !formData.content) {
       toast({
         title: "Missing Fields",
         description: "Title and content are required.",
         variant: "destructive",
-      })
-      setIsSubmitting(false)
-      return
+      });
+      setIsSubmitting(false);
+      return;
     }
 
-    const postData = new FormData()
-    postData.append("action","createPost")
-    postData.append("title", formData.title)
-    postData.append("content", formData.content)
+    const postData = new FormData();
+    postData.append("action", "createPost");
+    postData.append("title", formData.title);
+    postData.append("content", formData.content);
+
     if (formData.image) {
-      postData.append("image", formData.image)
+      console.log(
+        "Including image:",
+        formData.image.name,
+        "Size:",
+        formData.image.size
+      );
+      postData.append("image", formData.image);
     }
-    for (let [key, value] of postData.entries()) {
-      console.log(key, value); // Logs: action createPost, title My New Post, content This is my post content
-    }
+
     try {
-      const response = await fetch("http://localhost/serverass/serverside-assignment/php/community/api/post.php", { //problem
-        credentials: 'include',
-        method: "POST",
-        body: postData,
-      })
+      console.log("Submitting form data...");
 
-      // console.log("Response status:", response.status);
-      // console.log("Response type:", response.headers.get("content-type"));
-      // const text = await response.text(); // Get raw text instead of json
-      // console.log("Response body:", text);
+      const response = await fetch(
+        "http://localhost/server/php/community/api/post.php",
+        {
+          credentials: "include",
+          method: "POST",
+          body: postData,
+        }
+      );
 
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
 
-      //const data = await response.json()
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse JSON response:", e);
+        throw new Error("Invalid server response format");
+      }
 
-      const data2 = await response.text()
-     // const data = JSON.parse(data2);
-
-      if (response.ok ) {
-        console.log("Response data:", data2); // no data retrieving back
+      if (response.ok) {
+        console.log("Response data:", data);
         toast({
           title: "Post Published",
           description: "Your post has been successfully created.",
-        })
-        router.push("/community")
+        });
+        router.push("/community");
       } else {
-        throw new Error("Failed to create post")
+        throw new Error(data?.message || "Failed to create post");
       }
     } catch (error) {
-      console.error("Error creating post:", error)
+      console.error("Error creating post:", error);
       toast({
         title: "Error",
         description: "Failed to create post. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="container mx-auto py-10 px-4">
@@ -167,18 +179,30 @@ export default function NewPostPage() {
                   onChange={handleImageChange}
                   className="hidden"
                 />
-                {formData.image && <span className="text-sm text-gray-500">{formData.image.name}</span>}
+                {formData.image && (
+                  <span className="text-sm text-gray-500">
+                    {formData.image.name}
+                  </span>
+                )}
               </div>
 
               {imagePreview && (
                 <div className="mt-4">
-                  <img src={imagePreview} alt="Preview" className="max-h-64 rounded-md" />
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="max-h-64 rounded-md"
+                  />
                 </div>
               )}
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting} className="bg-[rgb(59,75,246)] hover:bg-[rgb(59,130,246,0.8)]">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-[rgb(59,75,246)] hover:bg-[rgb(59,130,246,0.8)]"
+              >
                 {isSubmitting ? "Publishing..." : "Publish Post"}
               </Button>
             </div>
@@ -186,5 +210,5 @@ export default function NewPostPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

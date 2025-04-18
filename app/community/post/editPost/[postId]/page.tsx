@@ -27,28 +27,35 @@ export default function EditPost() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Base URL for images
+  const imageBaseUrl = "http://localhost/server/serverside-assignment/public/";
+
   const currentUserId = 1; // Set user_id as 1
 
   useEffect(() => {
     const fetchPostDetails = async () => {
       try {
         const res = await fetch(
-          `http://localhost/serverass/serverside-assignment/php/community/api/post.php?action=getPostById&postId=${postId}`
+          `http://localhost/server/php/community/api/post.php?action=getPostById&postId=${postId}`
         );
         const data = await res.json();
-  
+
         if (data.data) {
           const normalizedPost = {
             ...data.data,
-            userId: data.data.user_id, 
+            userId: data.data.user_id,
           };
-  
-          console.log("Fetched Post:", normalizedPost); 
-  
+
+          console.log("Fetched Post:", normalizedPost);
+
           setPost(normalizedPost);
           setTitle(normalizedPost.title);
           setContent(normalizedPost.content);
-          setCurrentImage(normalizedPost.imageURL || "");
+
+          // Set the full image URL if imageURL exists
+          if (normalizedPost.imageURL) {
+            setCurrentImage(imageBaseUrl + normalizedPost.imageURL);
+          }
         } else {
           setError("Post not found");
         }
@@ -59,7 +66,7 @@ export default function EditPost() {
         setLoading(false);
       }
     };
-  
+
     fetchPostDetails();
   }, [postId]);
 
@@ -78,66 +85,61 @@ export default function EditPost() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     if (!post || !currentUserId) return;
-  
+
     // Ownership validation
     if (post.userId !== currentUserId) {
       setError("You don't have permission to edit this post");
       return;
     }
-  
+
     // Input validation
     if (!title.trim() || !content.trim()) {
       setError("Title and content are required");
       return;
     }
-  
+
     setSubmitting(true);
-  
-    try 
-    {
+
+    try {
       const formData = new FormData();
-      formData.append("action", "update_post");  
+      formData.append("action", "update_post");
       formData.append("post_id", postId.toString());
-      formData.append("title", title); 
-      formData.append("content", content); 
-  
+      formData.append("title", title);
+      formData.append("content", content);
+
       if (image) {
-        formData.append("image", image); 
+        formData.append("image", image);
       }
-  
+
       const res = await fetch(
-        "http://localhost/serverass/serverside-assignment/php/community/api/post.php",
+        "http://localhost/server/php/community/api/post.php",
         {
           method: "POST",
           body: formData,
         }
       );
-  
+
       const data = await res.json();
-  
+
       if (data.message === "Post updated successfully") {
         setError("Post updated successfully");
-      
+
         // Delay redirect for 3 seconds to show success message
         setTimeout(() => {
           router.push(`/community/post/${postId}`);
         }, 3000);
-      } 
-      else {
+      } else {
         setError(data.message || "Failed to update post");
       }
-    } 
-    catch (err) {
+    } catch (err) {
       console.error("Update error:", err);
       setError("An error occurred while updating the post");
-    } 
-    finally {
+    } finally {
       setSubmitting(false);
     }
   };
-  
 
   if (loading) {
     return (
@@ -241,6 +243,11 @@ export default function EditPost() {
                     src={currentImage}
                     alt="Current post image"
                     className="h-40 object-cover rounded-md"
+                    onError={(e) => {
+                      console.error("Image failed to load:", currentImage);
+                      (e.target as HTMLImageElement).src =
+                        "https://via.placeholder.com/400x300?text=Image+Not+Found";
+                    }}
                   />
                 </div>
               )}
@@ -251,7 +258,7 @@ export default function EditPost() {
                   <img
                     src={URL.createObjectURL(image)}
                     alt="Preview"
-                    className="h-40 object-cover rounded-md"
+                    className="max-w-full h-auto object-cover"
                   />
                 </div>
               )}

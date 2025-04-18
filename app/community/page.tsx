@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { ArrowLeft, PlusCircle, Users } from "lucide-react";
 import Link from "next/link";
@@ -62,10 +62,22 @@ const getCookie = (name: string): string | null => {
   return null;
 };
 
+// Helper function to get initials from user name
+const getInitials = (name: string | undefined): string => {
+  if (!name) return "A"; // Return an empty string if name is undefined or empty
+  const nameParts = name.split(" ");
+  return nameParts
+    .map((part) => part[0].toUpperCase())
+    .slice(0, 2)
+    .join("");
+};
+
 function CommunityFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'latest' | 'popular' | 'mine'>('all');
+  const [filter, setFilter] = useState<"all" | "latest" | "popular" | "mine">(
+    "all"
+  );
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,21 +89,20 @@ function CommunityFeed() {
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
-      let url = "http://localhost/serverass/serverside-assignment/php/community/api/post.php";
+      let url = "http://localhost/server/php/community/api/post.php";
 
       switch (filter) {
-        case 'latest':
+        case "latest":
           url += "?action=getAllPosts";
           break;
-        case 'popular':
+        case "popular":
           url += "?action=getPopularPosts";
           break;
-        case 'mine':
-          // Use currentUserId in the API request
+        case "mine":
           if (currentUserId) {
             url += `?action=getUserPosts&userId=${currentUserId}`;
           } else {
-            url += "?action=getAllPosts"; // 
+            url += "?action=getAllPosts"; //
           }
           break;
         default:
@@ -120,7 +131,7 @@ function CommunityFeed() {
     };
 
     fetchPosts();
-  }, [filter, currentUserId]); 
+  }, [filter, currentUserId]);
 
   if (loading) return <p>Loading posts...</p>;
 
@@ -128,23 +139,23 @@ function CommunityFeed() {
     <>
       <div className="flex gap-2 mb-4">
         <Button
-          variant={filter === 'latest' ? 'default' : 'outline'}
+          variant={filter === "latest" ? "default" : "outline"}
           size="sm"
-          onClick={() => setFilter('latest')}
+          onClick={() => setFilter("latest")}
         >
           Latest
         </Button>
         <Button
-          variant={filter === 'popular' ? 'default' : 'outline'}
+          variant={filter === "popular" ? "default" : "outline"}
           size="sm"
-          onClick={() => setFilter('popular')}
+          onClick={() => setFilter("popular")}
         >
           Popular
         </Button>
         <Button
-          variant={filter === 'mine' ? 'default' : 'outline'}
+          variant={filter === "mine" ? "default" : "outline"}
           size="sm"
-          onClick={() => setFilter('mine')}
+          onClick={() => setFilter("mine")}
         >
           My Post
         </Button>
@@ -157,13 +168,20 @@ function CommunityFeed() {
               <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Image
-                      src={post.userAvatar || "/placeholder.svg"}
-                      alt={post.userName || "User"}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
+                    {/* Display either avatar or initials if avatar is missing */}
+                    {post.userAvatar ? (
+                      <Image
+                        src={post.userAvatar}
+                        alt={post.userName || "User"}
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                        {getInitials(post.userName)}
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-medium">{post.userName}</h3>
                       <p className="text-sm text-gray-500">
