@@ -260,8 +260,7 @@ export default function EditPost() {
                   <img
                     src={URL.createObjectURL(image)}
                     alt="Preview"
-                    className="h-40 object-cover rounded-md"
-                  />
+                    className="max-w-full h-auto object-cover"                  />
                 </div>
               )}
 

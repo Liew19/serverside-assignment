@@ -28,6 +28,7 @@ interface Comment {
   comment: string;
   created_at: string;
   user_id: number;
+  post_id: number;
 }
 
 export default function PostDetail() {
@@ -40,6 +41,8 @@ export default function PostDetail() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [addingComment, setAddingComment] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentText, setEditCommentText] = useState("");
 
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -54,9 +57,9 @@ export default function PostDetail() {
 
   useEffect(() => {
     if (post) {
-      console.log(post.imageURL);  // Log it when post is available
+      console.log(`Image URL: ${post.imageURL}`);
     }
-  }, [post]);
+  }, [post])
 
   useEffect(() => {
     if (!postId) return;
@@ -217,7 +220,7 @@ export default function PostDetail() {
   const handleDeleteComment = async (commentId: number) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this comment?");
     if (!confirmDelete) return;
-  
+  console.log("Deleting comment with ID:", commentId);
     try {
       const res = await fetch(
         `http://localhost/server/php/community/api/comment.php?action=deleteComment&commentId=${commentId}`,
@@ -240,7 +243,67 @@ export default function PostDetail() {
       alert("An error occurred while deleting the comment.");
     }
   };
+
+  const handleEditComment = async (commentId: number, currentText: string) => {
+    setEditingCommentId(commentId);
+    setEditCommentText(currentText);
+  };
+
+  const saveEditedComment = async (
+    commentId: number,
+    userId: number
+  ) => {
+    if (!editCommentText.trim()) return;
   
+    try {
+      const requestBody = {
+        commentId,
+        userId,
+        content: editCommentText,
+      };
+      console.log("Sending request body:", requestBody);
+  
+      const res = await fetch(
+        "http://localhost/server/php/community/api/comment.php?action=editComment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(requestBody),
+        }
+      );
+  
+      const data = await res.json();
+      console.log("Response data:", data);
+  
+      if (data.success) {
+        //Update the comment in local state
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.comment_id === commentId
+              ? { ...comment, comment: editCommentText }
+              : comment
+          )
+        );
+  
+        setEditingCommentId(null);
+        setEditCommentText("");
+      } else {
+        alert(data.message || "Failed to update comment");
+      }
+    } catch (err) {
+      console.error("Error updating comment:", err);
+      alert("An error occurred while updating the comment.");
+    }
+  };
+
+  // cancel editing
+  const cancelEditing = () => {
+    setEditingCommentId(null);
+    setEditCommentText("");
+  };
 
   if (loading) {
     return (
@@ -304,8 +367,7 @@ export default function PostDetail() {
               <img
                 src={`http://localhost/server/serverside-assignment/public/${post.imageURL}`}
                 alt={post.title}
-                className="w-full rounded-lg object-cover max-h-96"
-              />
+                className="max-w-full h-auto object-cover"              />
             </div>
           )}
 
@@ -332,38 +394,74 @@ export default function PostDetail() {
         ) : (
           <ul className="space-y-4">
            {comments.map((comment, index) => {
-            /////////
-              console.log("Current User:", currentUser);
-              console.log("Comment user_id:", comment.user_id);
-              console.log("Comment id:", comment.comment_id);
-
-              if (!comment.user_id) {
-                console.error("Missing user_id for comment:", comment);
-              }
-              ///////////
-
               return (
                 <li key={index} className="relative border rounded p-4">
                   <p className="font-semibold">{comment.username}</p>
-                  <p>{comment.comment}</p>
+                  
+                  {editingCommentId === comment.comment_id ? (
+                  <div className="mt-2">
+                    <textarea
+                      id={`commentText_${comment.comment_id}`}
+                      name={`commentText_${comment.comment_id}`}
+                      className="w-full p-2 rounded bg-white text-black border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={editCommentText}
+                      onChange={(e) => setEditCommentText(e.target.value)}
+                      rows={3}
+                    />
+                      <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          console.log("Saving comment ID:", comment.comment_id);
+                          console.log("New text:", editCommentText);
+                          saveEditedComment(comment.comment_id, comment.user_id);
+                        }}
+                      >
+                        Save
+                      </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={cancelEditing}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    // View mode
+                    <p>{comment.comment}</p>
+                  )}
+                  
                   <p className="text-sm text-gray-500">
-                    Posted on{" "}
-                    {new Date(comment.created_at).toLocaleString()}
+                    Posted on {new Date(comment.created_at).toLocaleString()}
                   </p>
 
                   {comment.user_id === currentUser && (
-                    <Button
-                      variant="ghost"
-                      className="absolute top-2 right-2 text-red-500"
-                      onClick={() => handleDeleteComment(comment.comment_id)}
-                    >
-                      Delete
-                    </Button>
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      {editingCommentId !== comment.comment_id && (
+                        <Button
+                          variant="ghost"
+                          className="text-blue-500"
+                          onClick={() =>
+                            handleEditComment(comment.comment_id, comment.comment)
+                          }
+                        >
+                          Edit
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        className="text-red-500"
+                        onClick={() => handleDeleteComment(comment.comment_id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   )}
                 </li>
               );
             })}
-
           </ul>
         )}
 

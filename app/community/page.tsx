@@ -87,7 +87,6 @@ function CommunityFeed() {
           url += "?action=getPopularPosts";
           break;
         case 'mine':
-          // Use currentUserId in the API request
           if (currentUserId) {
             url += `?action=getUserPosts&userId=${currentUserId}`;
           } else {
@@ -105,6 +104,7 @@ function CommunityFeed() {
 
         const data = JSON.parse(text);
         console.log("Fetched Posts:", data);
+       
 
         if (data.data) {
           setPosts(data.data);
