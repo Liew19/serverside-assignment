@@ -123,14 +123,15 @@ INSERT INTO `favorite_recipes` (`favorite_id`, `user_id`, `recipe_id`, `created_
 --
 
 CREATE TABLE `meal_planning` (
-  `meal_id` int(11) NOT NULL,
+  `meal_id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `type` enum('breakfast','lunch','dinner','snack') NOT NULL,
   `is_custom` tinyint(1) DEFAULT 0,
   `recipe_id` int(11) DEFAULT NULL,
   `meal_date` date NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`meal_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
