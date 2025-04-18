@@ -19,7 +19,7 @@ ini_set('display_errors', 'Off');
 
 session_start();
 
-$database = new Database("localhost", "root", "", "recipe_database");
+$database = new Database("localhost", "root", "");
 $conn = $database->conn;
 
 if (!$conn) {
