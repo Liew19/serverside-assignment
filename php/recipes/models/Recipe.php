@@ -179,9 +179,16 @@ class Recipe {
         }
     }
 
-    // Get all recipes with optional limit
-    public static function getAllRecipes($conn, $limit = null) {
+    // Get all recipes with optional limit and search
+    public static function getAllRecipes($conn, $limit = null, $search = '') {
         $sql = "SELECT * FROM recipes WHERE is_deleted = 0";
+
+        // Add search condition if search parameter is provided
+        if (!empty($search)) {
+            $search = $conn->real_escape_string($search);
+            $sql .= " AND (title LIKE '%$search%' OR description LIKE '%$search%' OR ingredients LIKE '%$search%' OR cuisine LIKE '%$search%')";
+        }
+
         if ($limit) {
             $sql .= " LIMIT " . intval($limit);
         }
@@ -201,7 +208,7 @@ class Recipe {
             $row['recipe_id'] = intval($row['recipe_id']);
             $row['user_id'] = intval($row['user_id']);
             $row['is_deleted'] = intval($row['is_deleted']);
-            
+
             // Convert image_url to full URL if it exists
             if (!empty($row['image_url'])) {
                 // Check if the URL already starts with http:// or https://

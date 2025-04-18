@@ -47,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
         $search = isset($_GET['search']) ? $_GET['search'] : '';
 
-        // Try to get recipes
-        $result = Recipe::getAllRecipes($conn, $limit);
+        // Try to get recipes with search parameter
+        $result = Recipe::getAllRecipes($conn, $limit, $search);
 
         // Debug the result
         if ($result) {
