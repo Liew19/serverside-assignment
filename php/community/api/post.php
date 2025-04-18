@@ -19,7 +19,7 @@ require_once '../../users/User.php';
 require_once '../models/like.php';
 require_once '../models/comment.php';
 
-$database = new Database("localhost", "root", "");
+$database = new Database("localhost", "root", "", "recipe_database");
 if (!$database->conn) {
   http_response_code(500);
   echo json_encode(['message' => 'Failed to connect to database']);
@@ -68,7 +68,7 @@ if ($method === 'POST' && $action === 'createPost') {
 
   // Handle image upload if present
   if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-    $uploadDir = __DIR__ . '/../../public/images/community/';
+    $uploadDir = 'C:/Users/user/Desktop/serverass/serverside-assignment/public/images/community/';
     
     // Create directory if it doesn't exist
     if (!is_dir($uploadDir)) {
@@ -137,17 +137,40 @@ if ($method === 'POST' && $action === 'update_post') {
     exit();
   }
 
-  $result = Post::updatePost($postId, $title, $content, $database);
+  $imagePath = null;
+
+  // If a new image is uploaded
+  if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    $uploadDir = 'C:/Users/user/Desktop/serverass/serverside-assignment/public/images/community/';
+    $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+    $filename = 'post_' . uniqid() . '.' . $ext;
+    $targetPath = $uploadDir . $filename;
+
+    if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
+      $imagePath = 'images/community/' . $filename;
+    } else {
+      http_response_code(500);
+      echo json_encode(['success' => false, 'message' => 'Failed to upload image']);
+      exit();
+    }
+  }
+
+  require_once '../models/Post.php';
+  $result = Post::updatePost($postId, $title, $content, $imagePath, $database);
+
   if ($result) {
     http_response_code(200);
-    echo json_encode(['message' => 'Post updated successfully']);
+    $response = ['success' => true, 'message' => 'Post updated successfully'];
+    if ($imagePath) {
+      $response['newImageURL'] = $imagePath;
+    }
+    echo json_encode($response);
   } else {
     http_response_code(500);
-    echo json_encode(['message' => 'Failed to update post']);
+    echo json_encode(['success' => false, 'message' => 'Failed to update post']);
   }
   exit();
 }
-
 
 // ========== GET POST BY ID ==========
 if ($method === 'GET' && $action === 'getPostById' && isset($_GET['postId'])) {
@@ -230,6 +253,23 @@ if ($method === 'GET') {
       echo json_encode(['message' => 'Invalid action for GET request']);
   }
   exit();
+}
+
+// If a new image is uploaded
+if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+  $uploadDir = 'C:/Users/user/Desktop/serverass/serverside-assignment/public/images/community/';
+  $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+  $filename = 'post_' . uniqid() . '.' . $ext;
+  $targetPath = $uploadDir . $filename;
+
+  // Move the uploaded image to the target path
+  if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
+      $imagePath = 'images/community/' . $filename;
+  } else {
+      http_response_code(500);
+      echo json_encode(['success' => false, 'message' => 'Failed to upload image']);
+      exit();
+  }
 }
 
 // ========== INVALID FALLBACK ==========
