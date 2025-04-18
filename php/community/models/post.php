@@ -24,7 +24,12 @@ class Post
     public static function getAllPosts($database)
     {
         $conn = $database->conn;
-        $sql = "SELECT * FROM user_post WHERE isDeleted = 0 ORDER BY created_at DESC";
+        // Join with users table to get username only
+        $sql = "SELECT p.*, u.username as userName 
+                FROM user_post p 
+                LEFT JOIN users u ON p.user_id = u.user_id 
+                WHERE p.isDeleted = 0 
+                ORDER BY p.created_at DESC";
         $result = $conn->query($sql);
 
         if (!$result) {
@@ -34,18 +39,29 @@ class Post
 
         $posts = [];
         while ($row = $result->fetch_assoc()) {
+            // Add like and comment counts to each post
+            $row['likesCount'] = self::getLikeCount($row['post_id'], $database);
+            $row['commentsCount'] = self::getCommentCount($row['post_id'], $database);
             $posts[] = $row;
         }
 
         return $posts;
     }
 
-    public static function updatePost($postId, $title, $content, $database)
+    public static function updatePost($postId, $title, $content, $imagePath, $database)
     {
         $conn = $database->conn;
-        $sql = "UPDATE user_post SET title = ?, content = ?, updated_at = NOW() WHERE post_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssi", $title, $content, $postId);
+
+        if ($imagePath) {
+            $sql = "UPDATE user_post SET title = ?, content = ?, imageURL = ?, updated_at = NOW() WHERE post_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssi", $title, $content, $imagePath, $postId);
+        } else {
+            $sql = "UPDATE user_post SET title = ?, content = ?, updated_at = NOW() WHERE post_id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssi", $title, $content, $postId);
+        }
+
         return $stmt->execute();
     }
 
@@ -61,12 +77,23 @@ class Post
     public static function getPostById($postId, $database)
     {
         $conn = $database->conn;
-        $sql = "SELECT * FROM user_post WHERE post_id = ?";
+        $sql = "SELECT p.*, u.username as userName 
+                FROM user_post p 
+                LEFT JOIN users u ON p.user_id = u.user_id 
+                WHERE p.post_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $postId);
         $stmt->execute();
         $result = $stmt->get_result();
-        return $result->fetch_assoc();
+        $post = $result->fetch_assoc();
+        
+        if ($post) {
+            // Add like and comment counts
+            $post['likesCount'] = self::getLikeCount($post['post_id'], $database);
+            $post['commentsCount'] = self::getCommentCount($post['post_id'], $database);
+        }
+        
+        return $post;
     }
 
     public static function toggleLike($postId, $userId, $database)
@@ -108,31 +135,41 @@ class Post
     }
 
     public static function getUserPosts($userId, $db) {
-        $stmt = $db->conn->prepare("SELECT * FROM user_post WHERE user_id = ? AND isDeleted = 0 ORDER BY created_at DESC");
+        $stmt = $db->conn->prepare("SELECT p.*, u.username as userName 
+                                   FROM user_post p 
+                                   LEFT JOIN users u ON p.user_id = u.user_id 
+                                   WHERE p.user_id = ? AND p.isDeleted = 0 
+                                   ORDER BY p.created_at DESC");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
         $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        
+        $posts = [];
+        while ($row = $result->fetch_assoc()) {
+            // Add like and comment counts
+            $row['likesCount'] = self::getLikeCount($row['post_id'], $db);
+            $row['commentsCount'] = self::getCommentCount($row['post_id'], $db);
+            $posts[] = $row;
+        }
+        
+        return $posts;
     }
 
-    
     public static function getPopularPosts($database) {
         $conn = $database->conn;
     
         $query = "
             SELECT 
                 p.*, 
-                COUNT(l.post_id) AS likesCount
+                u.username as userName
             FROM 
                 user_post p
             LEFT JOIN 
-                likes l ON p.post_id = l.post_id
+                users u ON p.user_id = u.user_id
             WHERE 
                 p.isDeleted = 0
-            GROUP BY 
-                p.post_id
             ORDER BY 
-                likesCount DESC, p.created_at DESC
+                p.created_at DESC
         ";
     
         $result = $conn->query($query);
@@ -144,11 +181,18 @@ class Post
     
         $posts = [];
         while ($row = $result->fetch_assoc()) {
+            // Add like and comment counts
+            $row['likesCount'] = self::getLikeCount($row['post_id'], $database);
+            $row['commentsCount'] = self::getCommentCount($row['post_id'], $database);
             $posts[] = $row;
         }
+        
+        // Sort by likes count after adding the data
+        usort($posts, function($a, $b) {
+            return $b['likesCount'] - $a['likesCount'];
+        });
     
         return $posts;
     }
-    
 }
 ?>
