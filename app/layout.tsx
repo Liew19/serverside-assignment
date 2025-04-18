@@ -142,11 +142,11 @@ export default function RootLayout({
                     Recipes
                   </Link>
                   <Link
-                        href="/meal-planning"
-                        className="text-sm font-medium hover:text-primary transition-colors"
-                      >
-                        Meal Planning
-                      </Link>
+                    href="/meal-planning"
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
+                    Meal Planning
+                  </Link>
                   {isLoggedIn && (
                     <>
                       <Link
@@ -270,7 +270,7 @@ export default function RootLayout({
             </header>
             <main className="flex-1">{children}</main>
             <Toaster />
-            <footer className="py-8 bg-primary/5">
+            <footer className="py-8 bg-primary/5 bg-gray-200">
               <div className="container px-4">
                 <div className="flex flex-col md:flex-row justify-between items-center">
                   <p className="text-sm text-muted-foreground mb-4 md:mb-0">
