@@ -189,7 +189,7 @@ CREATE TABLE `meal_planning` (
   `is_custom` tinyint(1) DEFAULT 0,
   `recipe_id` int(11) DEFAULT NULL,
   `meal_date` date NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
