@@ -9,7 +9,7 @@
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
-SET time_zone = "+00:00";
+SET time_zone = "+08:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -182,7 +182,7 @@ INSERT INTO `likes` (`post_id`, `user_id`, `created_at`) VALUES
 --
 
 CREATE TABLE `meal_planning` (
-  `meal_id` int(11) NOT NULL AUTO_INCREMENT,
+  `meal_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `type` enum('breakfast','lunch','dinner','snack') NOT NULL,
@@ -420,6 +420,14 @@ ALTER TABLE `likes`
   ADD PRIMARY KEY (`post_id`,`user_id`);
 
 --
+-- Indexes for table `meal_planning`
+--
+ALTER TABLE `meal_planning`
+  ADD PRIMARY KEY (`meal_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `recipe_id` (`recipe_id`);
+
+--
 -- Indexes for table `password_resets`
 --
 ALTER TABLE `password_resets`
@@ -484,6 +492,13 @@ ALTER TABLE `favorite_recipes`
   MODIFY `favorite_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT for table `meal_planning`
+--
+ALTER TABLE `meal_planning`
+  MODIFY `meal_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+
+
+--
 -- AUTO_INCREMENT for table `recipes`
 --
 ALTER TABLE `recipes`
@@ -531,6 +546,14 @@ ALTER TABLE `competition_entries`
 ALTER TABLE `favorite_recipes`
   ADD CONSTRAINT `fk_recipe_id` FOREIGN KEY (`recipe_id`) REFERENCES `recipes` (`recipe_id`),
   ADD CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+
+--
+-- Constraints for table `meal_planning`
+--
+ALTER TABLE `meal_planning`
+  ADD CONSTRAINT `meal_planning_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `meal_planning_ibfk_2` FOREIGN KEY (`recipe_id`) REFERENCES `recipes` (`recipe_id`) ON DELETE SET NULL;
+
 
 --
 -- Constraints for table `password_resets`
