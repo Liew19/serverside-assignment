@@ -25,7 +25,7 @@ $fileTmpName = $file['tmp_name'];
 $fileError = $file['error'];
 
 // Define the upload directory path for storage
-$uploadDir = 'C:/Users/User/OneDrive/Documents/GitHub/serverside-assignment/public/images/recipes/';
+$uploadDir = 'C:/Users/User/OneDrive/Documents/GitHub/server/public/images/recipes/';
 
 // Generate a unique filename to prevent overwriting
 // Extract filename and extension
