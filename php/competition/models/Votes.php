@@ -70,11 +70,13 @@ class Votes
   public static function getMostVotedRecipe($competition_id, $conn)
   {
     $sql = "SELECT ce.entry_id, r.recipe_id, r.title AS recipe_title, COUNT(v.vote_id) AS total_votes
-    FROM votes v
-    JOIN competition_entries ce ON v.entry_id = ce.entry_id JOIN recipes r ON r.recipe_id = ce.recipe_id
-    JOIN competitions c ON c.competition_id = ce.competition_id
-    WHERE ce.competition_id = ? AND ce.is_deleted=0
-    GROUP BY ce.entry_id ORDER BY total_votes DESC LIMIT 1";
+            FROM votes v
+            JOIN competition_entries ce ON v.entry_id = ce.entry_id 
+            JOIN recipes r ON r.recipe_id = ce.recipe_id
+            JOIN competitions c ON c.competition_id = ce.competition_id
+            WHERE ce.competition_id = ? AND ce.is_deleted = 0
+            GROUP BY ce.entry_id 
+            ORDER BY total_votes DESC, ce.submission_date ASC LIMIT 1";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $competition_id);
     $result = $stmt->execute();
