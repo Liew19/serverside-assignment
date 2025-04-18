@@ -19,7 +19,7 @@ require_once '../../users/User.php';
 require_once '../models/like.php';
 require_once '../models/comment.php';
 
-$database = new Database("localhost", "root", "", "recipe_database");
+$database = new Database("localhost", "root", "");
 if (!$database->conn) {
   http_response_code(500);
   echo json_encode(['message' => 'Failed to connect to database']);
