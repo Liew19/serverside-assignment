@@ -9,9 +9,8 @@ import Image from "next/image";
 // Post interface
 interface Post {
   post_id: number;
-  userId: number;
+  user_id: number;
   userName: string;
-  userAvatar: string;
   title: string;
   content: string;
   imageURL: string;
@@ -64,7 +63,7 @@ const getCookie = (name: string): string | null => {
 
 // Helper function to get initials from user name
 const getInitials = (name: string | undefined): string => {
-  if (!name) return "A"; // Return an empty string if name is undefined or empty
+  if (!name) return "U"; // Return "U" for "User" if name is undefined or empty
   const nameParts = name.split(" ");
   return nameParts
     .map((part) => part[0].toUpperCase())
@@ -168,22 +167,12 @@ function CommunityFeed() {
               <div className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    {/* Display either avatar or initials if avatar is missing */}
-                    {post.userAvatar ? (
-                      <Image
-                        src={post.userAvatar}
-                        alt={post.userName || "User"}
-                        width={40}
-                        height={40}
-                        className="rounded-full"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-                        {getInitials(post.userName)}
-                      </div>
-                    )}
+                    {/* Display initials in avatar circle */}
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                      {getInitials(post.userName)}
+                    </div>
                     <div>
-                      <h3 className="font-medium">{post.userName}</h3>
+                      <h3 className="font-medium">{post.userName || "Anonymous User"}</h3>
                       <p className="text-sm text-gray-500">
                         {new Date(post.created_at).toLocaleDateString()}
                       </p>
